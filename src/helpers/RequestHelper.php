@@ -5,7 +5,7 @@
  * @author Zhang Jinlong <466028373@qq.com>
  * @link https://github.com/stonemax/acme2
  * @copyright Copyright &copy; 2018 Zhang Jinlong
- * @license https://opensource.org/licenses/mit-license.php  MIT License
+ * @license https://opensource.org/licenses/mit-license.php MIT License
  */
 
 namespace stomemax\acme2\helpers;
@@ -36,7 +36,7 @@ class Request
             "Connection: close{$crlf}{$crlf}",
         ];
 
-        return self::doRequest(
+        return self::run(
             $urlMap['hostWithSchema'],
             $urlMap['port'],
             implode($crlf, $requestData)
@@ -65,7 +65,7 @@ class Request
             $data
         ];
 
-        return self::doRequest(
+        return self::run(
             $urlMap['hostWithSchema'],
             $urlMap['port'],
             implode($crlf, $requestData)
@@ -90,7 +90,7 @@ class Request
             "Connection: close{$crlf}{$crlf}",
         ];
 
-        return self::doRequest(
+        return self::run(
             $urlMap['hostWithSchema'],
             $urlMap['port'],
             implode($crlf, $requestData)
@@ -131,7 +131,7 @@ class Request
      * @return array
      * @throws RequestException
      */
-    public static function doRequest($hostWithSchema, $port, $requestData)
+    public static function run($hostWithSchema, $port, $requestData)
     {
         $crlf = "\r\n";
         $response = '';

@@ -10,5 +10,10 @@
         }
     ],
     "minimum-stability": "stable",
-    "require": {}
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "stomemax\\acme2\\": "src/"
+        }
+    }
 }

@@ -1,0 +1,14 @@
+{
+    "name": "stonemax/acme2",
+    "description": "Another PHP client for acme protocal (version 2) implementation, used for generating letsencrypt's free ssl certificate.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Zhang Jinlong",
+            "email": "466028373@qq.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {}
+}

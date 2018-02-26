@@ -10,13 +10,14 @@
 
 namespace stomemax\acme2\helpers;
 
+use stomemax\acme2\Client;
 use stomemax\acme2\exceptions\RequestException;
 
 /**
  * Class RequestHelper
  * @package stomemax\acme2\helpers
  */
-class Request
+class RequestHelper
 {
     /**
      * Make http GET request
@@ -33,6 +34,7 @@ class Request
             "GET {$urlMap['path']}{$urlMap['query']} HTTP/1.1",
             "Host: {$urlMap['host']}",
             "Accept: application/json",
+            "User-Agent: ".Client::$runtime->params['software'].'/'.Client::$runtime->params['version'],
             "Connection: close{$crlf}{$crlf}",
         ];
 
@@ -46,7 +48,7 @@ class Request
     /**
      * Make http POST request
      * @param string $url
-     * @param array $data
+     * @param string $data
      * @return array
      * @throws RequestException
      */
@@ -54,12 +56,13 @@ class Request
     {
         $crlf = "\r\n";
         $urlMap = self::parseUrl($url);
-        $data = json_encode($data);
 
         $requestData = [
             "POST {$urlMap['path']}{$urlMap['query']} HTTP/1.1",
             "Host: {$urlMap['host']}",
             "Accept: application/json",
+            "User-Agent: ".Client::$runtime->params['software'].'/'.Client::$runtime->params['version'],
+            "Connection: close",
             "Content-Type: application/json",
             "Content-Length: ".strlen($data).$crlf,
             $data
@@ -87,6 +90,7 @@ class Request
             "HEAD {$urlMap['path']}{$urlMap['query']} HTTP/1.1",
             "Host: {$urlMap['host']}",
             "Accept: application/json",
+            "User-Agent: ".Client::$runtime->params['software'].'/'.Client::$runtime->params['version'],
             "Connection: close{$crlf}{$crlf}",
         ];
 
@@ -153,11 +157,18 @@ class Request
 
         list($header, $body) = explode($crlf.$crlf, $response, 2);
 
+        /* Get replay nonce */
+        if ($nonce = CommonHelper::getNonceFromResponseHeader($header))
+        {
+            Client::$runtime->nonce->set($nonce);
+        }
+
         preg_match('/\d{3}/', trim($header), $matches);
 
         return [
-            'code' => intval($matches[0]),
-            'data' => json_decode(trim($body), TRUE),
+            intval($matches[0]),               // response http status code
+            $header,                           // response http header
+            json_decode(trim($body), TRUE),    // response data
         ];
     }
 }

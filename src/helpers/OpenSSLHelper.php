@@ -10,6 +10,7 @@
 
 namespace stomemax\acme2\helpers;
 
+use stomemax\acme2\Client;
 use stomemax\acme2\exceptions\OpenSSLException;
 
 /**
@@ -53,5 +54,73 @@ class OpenSSLHelper
             'privateKey' => $privateKey,
             'publicKey' => $detail['key'],
         ];
+    }
+
+    /**
+     * Generate JWS(Json Web Signature) with field `jwk`
+     * @param string $url
+     * @param array $payload
+     * @param string $privateKey
+     * @return string
+     */
+    public static function generateJWSOfJWK($url, $payload, $privateKey)
+    {
+        $privateKey = openssl_pkey_get_private($privateKey);
+        $detail = openssl_pkey_get_details($privateKey);
+
+        $protected = [
+            'alg' => 'RS256',
+            'jwk' => [
+                'kty' => 'RSA',
+                'n' => CommonHelper::base64UrlSafeEncode($detail['rsa']['n']),
+                'e' => CommonHelper::base64UrlSafeEncode($detail['rsa']['e']),
+            ],
+            'nonce' => Client::$runtime->nonce->get(),
+            'url' => $url,
+        ];
+
+        $protectedBase64 = CommonHelper::base64UrlSafeEncode(json_encode($protected));
+        $payloadBase64 = CommonHelper::base64UrlSafeEncode(json_encode($payload));
+
+        openssl_sign($protectedBase64.'.'.$payloadBase64, $signature, $privateKey, 'SHA256');
+        $signatureBase64 = CommonHelper::base64UrlSafeEncode($signature);
+
+        return json_encode([
+            'protected' => $protectedBase64,
+            'payload' => $payloadBase64,
+            'signature' => $signatureBase64,
+        ]);
+    }
+
+    /**
+     * Generate JWS(Json Web Signature) with field `kid`
+     * @param string $url
+     * @param string $kid
+     * @param array $payload
+     * @param string $privateKey
+     * @return string
+     */
+    public static function generateJWSOfKid($url, $kid, $payload, $privateKey)
+    {
+        $privateKey = openssl_pkey_get_private($privateKey);
+
+        $protected = [
+            'alg' => 'RS256',
+            'kid' => $kid,
+            'nonce' => Client::$runtime->nonce->get(),
+            'url' => $url,
+        ];
+
+        $protectedBase64 = CommonHelper::base64UrlSafeEncode(json_encode($protected));
+        $payloadBase64 = CommonHelper::base64UrlSafeEncode(json_encode($payload));
+
+        openssl_sign($protectedBase64.'.'.$payloadBase64, $signature, $privateKey, 'SHA256');
+        $signatureBase64 = CommonHelper::base64UrlSafeEncode($signature);
+
+        return json_encode([
+            'protected' => $protectedBase64,
+            'payload' => $payloadBase64,
+            'signature' => $signatureBase64,
+        ]);
     }
 }

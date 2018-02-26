@@ -52,6 +52,16 @@ class EndpointService
      */
     public function __construct()
     {
+        $this->populate();
+    }
+
+    /**
+     * Populate endpoint info
+     * @throws EndpointException
+     * @throws \stomemax\acme2\exceptions\RequestException
+     */
+    private function populate()
+    {
         $endpointUrl = Client::$runtime->staging === FALSE
             ? Client::$runtime->params['endpointUrl']
             : Client::$runtime->params['endpointStagingUrl'];

@@ -60,12 +60,13 @@ class OpenSSLHelper
      * Generate JWS(Json Web Signature) with field `jwk`
      * @param string $url
      * @param array $payload
-     * @param string $privateKey
      * @return string
+     * @throws \stomemax\acme2\exceptions\NonceException
+     * @throws \stomemax\acme2\exceptions\RequestException
      */
-    public static function generateJWSOfJWK($url, $payload, $privateKey)
+    public static function generateJWSOfJWK($url, $payload)
     {
-        $privateKey = openssl_pkey_get_private($privateKey);
+        $privateKey = openssl_pkey_get_private(Client::$runtime->account->getPrivateKey());
         $detail = openssl_pkey_get_details($privateKey);
 
         $protected = [
@@ -97,12 +98,13 @@ class OpenSSLHelper
      * @param string $url
      * @param string $kid
      * @param array $payload
-     * @param string $privateKey
      * @return string
+     * @throws \stomemax\acme2\exceptions\NonceException
+     * @throws \stomemax\acme2\exceptions\RequestException
      */
-    public static function generateJWSOfKid($url, $kid, $payload, $privateKey)
+    public static function generateJWSOfKid($url, $kid, $payload)
     {
-        $privateKey = openssl_pkey_get_private($privateKey);
+        $privateKey = openssl_pkey_get_private(Client::$runtime->account->getPrivateKey());
 
         $protected = [
             'alg' => 'RS256',

@@ -89,5 +89,7 @@ class Runtime
         $this->endpoint = new EndpointService();
         $this->nonce = new NonceService();
         $this->account = new AccountService($this->storagePath.'/account');
+
+        $this->account->init();
     }
 }

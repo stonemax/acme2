@@ -29,12 +29,10 @@ class NonceService
 
     /**
      * NonceService constructor.
-     * @throws NonceException
-     * @throws \stomemax\acme2\exceptions\RequestException
      */
     public function __construct()
     {
-
+        // do nothing
     }
 
     /**

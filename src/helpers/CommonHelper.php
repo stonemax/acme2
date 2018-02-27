@@ -61,4 +61,53 @@ class CommonHelper
 
         return trim($matches[1]);
     }
+
+    /**
+     * Check http challenge locally
+     * @param string $domain
+     * @param string $fileName
+     * @param string $fileContent
+     * @return bool
+     * @throws \stomemax\acme2\exceptions\RequestException
+     */
+    public static function checkHttpChallenge($domain, $fileName, $fileContent)
+    {
+        $baseUrl = "{$domain}/.well-known/acme-challenge/{$fileName}";
+
+        foreach (['http', 'https'] as $schema)
+        {
+            $url = "{$schema}://$baseUrl";
+
+            list(, , $body) = RequestHelper::get($url);
+
+            if ($body == $fileContent)
+            {
+                return TRUE;
+            }
+        }
+
+        return FALSE;
+    }
+
+    /**
+     * Check dns challenge locally
+     * @param string $domain
+     * @param string $dnsContent
+     * @return bool
+     */
+    public static function checkDNSChallenge($domain, $dnsContent)
+    {
+        $host = '_acme-challenge.'.str_replace('*.', '', $domain);
+        $recordList = dns_get_record($host, DNS_TXT);
+
+        foreach ($recordList as $record)
+        {
+            if ($record['host'] == $host && $record['type'] == 'TXT' && $record['txt'] == $dnsContent)
+            {
+                return TRUE;
+            }
+        }
+
+        return FALSE;
+    }
 }

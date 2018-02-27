@@ -157,7 +157,7 @@ class RequestHelper
 
         list($header, $body) = explode($crlf.$crlf, $response, 2);
 
-        /* Get replay nonce */
+        /* Get replay nonce from this request's header */
         if ($nonce = CommonHelper::getNonceFromResponseHeader($header))
         {
             Client::$runtime->nonce->set($nonce);
@@ -165,10 +165,13 @@ class RequestHelper
 
         preg_match('/\d{3}/', trim($header), $matches);
 
+        $body = trim($body);
+        $bodyDecoded = json_decode(trim($body), TRUE);
+
         return [
-            intval($matches[0]),               // response http status code
-            $header,                           // response http header
-            json_decode(trim($body), TRUE),    // response data
+            intval($matches[0]),                             // response http status code
+            $header,                                         // response http header
+            $bodyDecoded !== NULL ? $bodyDecoded : $body,    // response data
         ];
     }
 }

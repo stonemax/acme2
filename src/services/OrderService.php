@@ -168,7 +168,38 @@ class OrderService
 
     public function verifyChallenge($type)
     {
+        $thumbprint = $this->generateThumbprint();
 
+        while (TRUE)
+        {
+            $failCount = 0;
+
+            /* @var $authorization \stomemax\acme2\services\AuthorizationService */
+            foreach ($this->_authorizationList as $authorization)
+            {
+                if ($authorization->status != 'pending')
+                {
+                    continue;
+                }
+
+                $challenge = $authorization->getChallenge($type);
+
+                if ($challenge['status'] != 'pending')
+                {
+                    continue;
+                }
+
+                if ($authorization->verify($type, $thumbprint) === FALSE)
+                {
+                    $failCount++;
+                }
+            }
+
+            if ($failCount == 0)
+            {
+                break;
+            }
+        }
     }
 
     private function getAuthorizationList()

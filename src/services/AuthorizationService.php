@@ -9,8 +9,11 @@
  */
 
 namespace stomemax\acme2\services;
+
 use stomemax\acme2\Client;
+use stomemax\acme2\constants\CommonConstant;
 use stomemax\acme2\exceptions\AuthorizationException;
+use stomemax\acme2\helpers\CommonHelper;
 use stomemax\acme2\helpers\OpenSSLHelper;
 use stomemax\acme2\helpers\RequestHelper;
 
@@ -20,16 +23,42 @@ use stomemax\acme2\helpers\RequestHelper;
  */
 class AuthorizationService
 {
+    /**
+     * Domain info
+     * @var array
+     */
     public $identifier;
 
+    /**
+     * Authorization status
+     * @var string
+     */
     public $status;
 
+    /**
+     * Expire time, like yyyy-mm-ddThh:mm:ssZ
+     * @var string
+     */
     public $expires;
 
+    /**
+     * Supplied challenge types
+     * @var array
+     */
     public $challenges;
 
+    /**
+     * Access this url to get authorization info
+     * @var string
+     */
     public $authorizationUrl;
 
+    /**
+     * AuthorizationService constructor.
+     * @param string $authorizationUrl
+     * @throws AuthorizationException
+     * @throws \stomemax\acme2\exceptions\RequestException
+     */
     public function __construct($authorizationUrl)
     {
         $this->authorizationUrl = $authorizationUrl;
@@ -37,6 +66,12 @@ class AuthorizationService
         $this->getAuthorization();
     }
 
+    /**
+     * Get authorization info
+     * @return array
+     * @throws AuthorizationException
+     * @throws \stomemax\acme2\exceptions\RequestException
+     */
     public function getAuthorization()
     {
         list($code, $header , $body) = RequestHelper::get($this->authorizationUrl);
@@ -51,6 +86,11 @@ class AuthorizationService
         return array_merge($body, ['authorizationUrl' => $this->authorizationUrl]);
     }
 
+    /**
+     * Get challenge to verify
+     * @param string $type http-01 or dns-01
+     * @return mixed|null
+     */
     public function getChallenge($type)
     {
         foreach ($this->challenges as $challenge)
@@ -64,9 +104,25 @@ class AuthorizationService
         return NULL;
     }
 
-    public function verify($type, $keyAuthorization)
+    /**
+     * Make letsencrypt to verify
+     * @param string $type
+     * @param string $thumbprint
+     * @return bool
+     * @throws AuthorizationException
+     * @throws \stomemax\acme2\exceptions\AccountException
+     * @throws \stomemax\acme2\exceptions\NonceException
+     * @throws \stomemax\acme2\exceptions\RequestException
+     */
+    public function verify($type, $thumbprint)
     {
         $challenge = $this->getChallenge($type);
+        $keyAuthorization = $challenge['token'].'.'.$thumbprint;
+
+        if ($this->verifyLocally($type, $keyAuthorization) === FALSE)
+        {
+            return FALSE;
+        }
 
         $jwk = OpenSSLHelper::generateJWSOfKid(
             $challenge['url'],
@@ -91,6 +147,41 @@ class AuthorizationService
         return TRUE;
     }
 
+    /**
+     * Check locally
+     * @param string $type
+     * @param string $keyAuthorization
+     * @return bool
+     * @throws \stomemax\acme2\exceptions\RequestException
+     */
+    private function verifyLocally($type, $keyAuthorization)
+    {
+        $challenge = $this->getChallenge($type);
+
+        if ($type == CommonConstant::CHALLENGE_TYPE_HTTP)
+        {
+            if (!CommonHelper::checkHttpChallenge($challenge['identifier'], $challenge['token'], $keyAuthorization))
+            {
+                return FALSE;
+            }
+        }
+        else
+        {
+            $dnsContent = CommonHelper::base64UrlSafeEncode(hash('sha256', $keyAuthorization, TRUE));
+
+            if (!CommonHelper::checkDNSChallenge($challenge['identifier'], $dnsContent))
+            {
+                return FALSE;
+            }
+        }
+
+        return TRUE;
+    }
+
+    /**
+     * Populate properties of this instance
+     * @param array $authorizationInfo
+     */
     private function populate($authorizationInfo)
     {
         foreach ($authorizationInfo as $key => $value)

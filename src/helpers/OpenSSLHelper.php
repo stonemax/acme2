@@ -11,6 +11,7 @@
 namespace stomemax\acme2\helpers;
 
 use stomemax\acme2\Client;
+use stomemax\acme2\constants\CommonConstant;
 use stomemax\acme2\exceptions\OpenSSLException;
 
 /**
@@ -26,26 +27,61 @@ class OpenSSLHelper
      */
     public static function generateRSAKeyPair()
     {
-        $resource = openssl_pkey_new([
-            "private_key_type" => OPENSSL_KEYTYPE_RSA,
-            "private_key_bits" => 4096,
-        ]);
+        return self::generateKeyPair(CommonConstant::KEY_PAIR_TYPE_RSA);
+    }
+
+    /**
+     * Genarate ec public/private key pair
+     * @return array
+     * @throws OpenSSLException
+     */
+    public static function generateECKeyPair()
+    {
+        return self::generateKeyPair(CommonConstant::KEY_PAIR_TYPE_EC);
+    }
+
+    /**
+     * Generate private/public key pair
+     * @param $type
+     * @return array
+     * @throws OpenSSLException
+     */
+    public static function generateKeyPair($type)
+    {
+        $configMap = [
+            CommonConstant::KEY_PAIR_TYPE_RSA => [
+                'private_key_type' => OPENSSL_KEYTYPE_RSA,
+                'private_key_bits' => 4096,
+            ],
+
+            CommonConstant::KEY_PAIR_TYPE_EC => [
+                'private_key_type' => OPENSSL_KEYTYPE_EC,
+                'curve_name' => 'prime256v1',
+            ],
+        ];
+
+        $typeNameMap = [
+            CommonConstant::KEY_PAIR_TYPE_RSA => 'RSA',
+            CommonConstant::KEY_PAIR_TYPE_EC => 'EC',
+        ];
+
+        $resource = openssl_pkey_new($configMap[$type]);
 
         if ($resource === FALSE)
         {
-            throw new OpenSSLException("Generate rsa key pair failed.");
+            throw new OpenSSLException("Generate {$typeNameMap[$type]} key pair failed.");
         }
 
         if (openssl_pkey_export($resource, $privateKey) === FALSE)
         {
-            throw new OpenSSLException("Export private key failed.");
+            throw new OpenSSLException("Export {$typeNameMap[$type]} private key failed.");
         }
 
         $detail = openssl_pkey_get_details($resource);
 
         if ($detail === FALSE)
         {
-            throw new OpenSSLException("Get key details failed.");
+            throw new OpenSSLException("Get {$typeNameMap[$type]} key details failed.");
         }
 
         openssl_pkey_free($resource);

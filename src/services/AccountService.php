@@ -152,7 +152,7 @@ class AccountService
             $payload
         );
 
-        list($code, $header, $body) = RequestHelper::post(Client::$runtime->endpoint->newAccount, $jws);print_r($body);
+        list($code, $header, $body) = RequestHelper::post(Client::$runtime->endpoint->newAccount, $jws);
 
         if ($code != 201)
         {

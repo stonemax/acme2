@@ -28,12 +28,33 @@ class CommonHelper
 
     /**
      * Get replay nonce from http response header
-     * @param $header
+     * @param string $header
      * @return bool|string
      */
     public static function getNonceFromResponseHeader($header)
     {
-        if (!preg_match('/Replay-Nonce:\s*(\S+)/i', $header, $matches))
+        return self::getFieldFromHeader('Replay-Nonce', $header);
+    }
+
+    /**
+     * Get location field from http response header
+     * @param string $header
+     * @return bool|string
+     */
+    public static function getLocationFiledFromHeader($header)
+    {
+        return self::getFieldFromHeader('Location', $header);
+    }
+
+    /**
+     * Get field from http response header
+     * @param string $field
+     * @param string $header
+     * @return bool|string
+     */
+    public static function getFieldFromHeader($field, $header)
+    {
+        if (!preg_match("/{$field}:\s*(\S+)/i", $header, $matches))
         {
             return FALSE;
         }

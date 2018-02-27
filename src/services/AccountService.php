@@ -12,6 +12,7 @@ namespace stomemax\acme2\services;
 
 use stomemax\acme2\Client;
 use stomemax\acme2\exceptions\AccountException;
+use stomemax\acme2\helpers\CommonHelper;
 use stomemax\acme2\helpers\OpenSSLHelper;
 use stomemax\acme2\helpers\RequestHelper;
 
@@ -191,14 +192,12 @@ class AccountService
 
         if ($code != 200)
         {
-            throw new AccountException("Get account info failed, the code is: {$code}, the header is: {$header}, the body is: {$body}");
+            throw new AccountException("Get account info failed, the code is: {$code}, the header is: {$header}, the body is: ".print_r($body, TRUE));
         }
 
-        $accountInfo = array_merge($body, ['accountUrl' => $accountUrl]);
+        $this->populate($body);
 
-        $this->populate($accountInfo);
-
-        return $accountInfo;
+        return array_merge($body, ['accountUrl' => $accountUrl]);
     }
 
     /**
@@ -224,7 +223,7 @@ class AccountService
 
         if ($code != 200)
         {
-            throw new AccountException("Get account url failed, the code is: {$code}, the header is: {$header}, the body is: {$body}");
+            throw new AccountException("Get account url failed, the code is: {$code}, the header is: {$header}, the body is: ".print_r($body, TRUE));
         }
 
         if (!preg_match('/Location:\s*(\S+)/i', $header, $matches))
@@ -266,19 +265,90 @@ class AccountService
 
         if ($code != 200)
         {
-            throw new AccountException("Update account contact info failed, the code is: {$code}, the header is: {$header}, the body is: {$body}");
+            throw new AccountException("Update account contact info failed, the code is: {$code}, the header is: {$header}, the body is: ".print_r($body, TRUE));
         }
 
-        $accountInfo = array_merge($body, ['accountUrl' => $accountUrl]);
+        $this->populate($body);
 
-        $this->populate($accountInfo);
-
-        return $accountInfo;
+        return array_merge($body, ['accountUrl' => $accountUrl]);
     }
 
+    /**
+     * Update accout private/public keys
+     * @throws AccountException
+     * @throws \stomemax\acme2\exceptions\NonceException
+     * @throws \stomemax\acme2\exceptions\OpenSSLException
+     * @throws \stomemax\acme2\exceptions\RequestException
+     */
     public function updateAccountKey()
     {
+        $keyPair = OpenSSLHelper::generateRSAKeyPair();
 
+        $privateKey = openssl_pkey_get_private($keyPair['privateKey']);
+        $detail = openssl_pkey_get_details($privateKey);
+
+        $innerPayload = [
+            'account' => $this->getAccountUrl(),
+            'newKey' => [
+                'kty' => 'RSA',
+                'n' => CommonHelper::base64UrlSafeEncode($detail['rsa']['n']),
+                'e' => CommonHelper::base64UrlSafeEncode($detail['rsa']['e']),
+            ],
+        ];
+
+        $outerPayload = OpenSSLHelper::generateJWSOfJWK(
+            Client::$runtime->endpoint->keyChange,
+            $innerPayload,
+            $keyPair['privateKey']
+        );
+
+        $jws = OpenSSLHelper::generateJWSOfKid(
+            Client::$runtime->endpoint->keyChange,
+            $this->getAccountUrl(),
+            $outerPayload
+        );
+
+        list($code, $header, $body) = RequestHelper::post(Client::$runtime->endpoint->keyChange, $jws);
+
+        if ($code != 200)
+        {
+            throw new AccountException("Update account key failed, the code is: {$code}, the header is: {$header}, the body is: ".print_r($body, TRUE));
+        }
+
+        $this->populate($body);
+        $this->createKeyPairFile($keyPair);
+
+        return array_merge($body, ['accountUrl' => $this->getAccountUrl()]);
+    }
+
+    /**
+     * Deactivate account
+     * @return array
+     * @throws AccountException
+     * @throws \stomemax\acme2\exceptions\NonceException
+     * @throws \stomemax\acme2\exceptions\RequestException
+     */
+    public function deactivateAccount()
+    {
+        $jws = OpenSSLHelper::generateJWSOfKid(
+            $this->getAccountUrl(),
+            $this->getAccountUrl(),
+            ['status' => 'deactivated']
+        );
+
+        list($code, $header, $body) = RequestHelper::post($this->getAccountUrl(), $jws);
+
+        if ($code != 200)
+        {
+            throw new AccountException("Deactivate account failed, the code is: {$code}, the header is: {$header}, the body is: ".print_r($body, TRUE));
+        }
+
+        $this->populate($body);
+
+        @unlink($this->_privateKeyPath);
+        @unlink($this->_publicKeyPath);
+
+        return array_merge($body, ['accountUrl' => $this->getAccountUrl()]);
     }
 
     /**
@@ -292,12 +362,13 @@ class AccountService
 
     /**
      * Create private/public key pair files
+     * @param array|null $keyPair
      * @throws AccountException
      * @throws \stomemax\acme2\exceptions\OpenSSLException
      */
-    protected function createKeyPairFile()
+    private function createKeyPairFile($keyPair = NULL)
     {
-        $keyPair = OpenSSLHelper::generateRSAKeyPair();
+        $keyPair = $keyPair ?: OpenSSLHelper::generateRSAKeyPair();
 
         $result = file_put_contents($this->_privateKeyPath, $keyPair['privateKey'])
             && file_put_contents($this->_publicKeyPath, $keyPair['publicKey']);

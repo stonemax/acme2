@@ -10,8 +10,6 @@
 
 namespace stomemax\acme2;
 
-use stomemax\acme2\exceptions\RuntimeException;
-use stomemax\acme2\helpers\RequestHelper;
 use stomemax\acme2\services\AccountService;
 use stomemax\acme2\services\EndpointService;
 use stomemax\acme2\services\NonceService;

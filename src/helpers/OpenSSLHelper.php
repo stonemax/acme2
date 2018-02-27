@@ -59,14 +59,15 @@ class OpenSSLHelper
     /**
      * Generate JWS(Json Web Signature) with field `jwk`
      * @param string $url
-     * @param array $payload
+     * @param array|string $payload
+     * @param string|null $privateKey
      * @return string
      * @throws \stomemax\acme2\exceptions\NonceException
      * @throws \stomemax\acme2\exceptions\RequestException
      */
-    public static function generateJWSOfJWK($url, $payload)
+    public static function generateJWSOfJWK($url, $payload, $privateKey = NULL)
     {
-        $privateKey = openssl_pkey_get_private(Client::$runtime->account->getPrivateKey());
+        $privateKey = openssl_pkey_get_private($privateKey ?: Client::$runtime->account->getPrivateKey());
         $detail = openssl_pkey_get_details($privateKey);
 
         $protected = [
@@ -81,7 +82,7 @@ class OpenSSLHelper
         ];
 
         $protectedBase64 = CommonHelper::base64UrlSafeEncode(json_encode($protected));
-        $payloadBase64 = CommonHelper::base64UrlSafeEncode(json_encode($payload));
+        $payloadBase64 = CommonHelper::base64UrlSafeEncode(is_array($payload) ? json_encode($payload) : $payload);
 
         openssl_sign($protectedBase64.'.'.$payloadBase64, $signature, $privateKey, 'SHA256');
         $signatureBase64 = CommonHelper::base64UrlSafeEncode($signature);
@@ -97,7 +98,7 @@ class OpenSSLHelper
      * Generate JWS(Json Web Signature) with field `kid`
      * @param string $url
      * @param string $kid
-     * @param array $payload
+     * @param array|string $payload
      * @return string
      * @throws \stomemax\acme2\exceptions\NonceException
      * @throws \stomemax\acme2\exceptions\RequestException
@@ -114,7 +115,7 @@ class OpenSSLHelper
         ];
 
         $protectedBase64 = CommonHelper::base64UrlSafeEncode(json_encode($protected));
-        $payloadBase64 = CommonHelper::base64UrlSafeEncode(json_encode($payload));
+        $payloadBase64 = CommonHelper::base64UrlSafeEncode(is_array($payload) ? json_encode($payload) : $payload);
 
         openssl_sign($protectedBase64.'.'.$payloadBase64, $signature, $privateKey, 'SHA256');
         $signatureBase64 = CommonHelper::base64UrlSafeEncode($signature);

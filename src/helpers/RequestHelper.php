@@ -8,14 +8,14 @@
  * @license https://opensource.org/licenses/mit-license.php MIT License
  */
 
-namespace stomemax\acme2\helpers;
+namespace stonemax\acme2\helpers;
 
-use stomemax\acme2\Client;
-use stomemax\acme2\exceptions\RequestException;
+use stonemax\acme2\Client;
+use stonemax\acme2\exceptions\RequestException;
 
 /**
  * Class RequestHelper
- * @package stomemax\acme2\helpers
+ * @package stonemax\acme2\helpers
  */
 class RequestHelper
 {

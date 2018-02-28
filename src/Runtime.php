@@ -8,15 +8,16 @@
  * @license https://opensource.org/licenses/mit-license.php MIT License
  */
 
-namespace stomemax\acme2;
+namespace stonemax\acme2;
 
-use stomemax\acme2\services\AccountService;
-use stomemax\acme2\services\EndpointService;
-use stomemax\acme2\services\NonceService;
+use stonemax\acme2\services\AccountService;
+use stonemax\acme2\services\EndpointService;
+use stonemax\acme2\services\NonceService;
+use stonemax\acme2\services\OrderService;
 
 /**
  * Class Runtime
- * @package stomemax\acme2
+ * @package stonemax\acme2
  */
 class Runtime
 {
@@ -46,19 +47,25 @@ class Runtime
 
     /**
      * Account service instance
-     * @var \stomemax\acme2\services\AccountService
+     * @var \stonemax\acme2\services\AccountService
      */
     public $account;
 
     /**
+     * Order service instance
+     * @var \stonemax\acme2\services\OrderService
+     */
+    public $order;
+
+    /**
      * Endpoint service instance
-     * @var \stomemax\acme2\services\EndpointService
+     * @var \stonemax\acme2\services\EndpointService
      */
     public $endpoint;
 
     /**
      * Nonce service instance
-     * @var \stomemax\acme2\services\NonceService
+     * @var \stonemax\acme2\services\NonceService
      */
     public $nonce;
 
@@ -71,7 +78,7 @@ class Runtime
     public function __construct($emailList, $storagePath, $staging = FALSE)
     {
         $this->emailList = array_filter(array_unique($emailList));
-        $this->storagePath = trim($storagePath);
+        $this->storagePath = rtrim(trim($storagePath), '/');
         $this->staging = boolval($staging);
 
         sort($this->emailList);
@@ -89,5 +96,24 @@ class Runtime
         $this->account = new AccountService($this->storagePath.'/account');
 
         $this->account->init();
+    }
+
+    /**
+     * Get order service instance
+     * @param string $baseDomain
+     * @param array $domainList
+     * @param string $algorithm
+     * @param string $notBefore
+     * @param string $notAfter
+     * @return OrderService
+     */
+    public function getOrder($baseDomain, $domainList, $algorithm, $notBefore, $notAfter)
+    {
+        if (!$this->order)
+        {
+            $this->order = new OrderService($baseDomain, $domainList, $algorithm, $notBefore, $notAfter);
+        }
+
+        return $this->order;
     }
 }

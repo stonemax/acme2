@@ -8,17 +8,17 @@
  * @license https://opensource.org/licenses/mit-license.php MIT License
  */
 
-namespace stomemax\acme2\services;
+namespace stonemax\acme2\services;
 
-use stomemax\acme2\Client;
-use stomemax\acme2\exceptions\AccountException;
-use stomemax\acme2\helpers\CommonHelper;
-use stomemax\acme2\helpers\OpenSSLHelper;
-use stomemax\acme2\helpers\RequestHelper;
+use stonemax\acme2\Client;
+use stonemax\acme2\exceptions\AccountException;
+use stonemax\acme2\helpers\CommonHelper;
+use stonemax\acme2\helpers\OpenSSLHelper;
+use stonemax\acme2\helpers\RequestHelper;
 
 /**
  * Class AccountService
- * @package stomemax\acme2\services
+ * @package stonemax\acme2\services
  */
 class AccountService
 {
@@ -104,9 +104,9 @@ class AccountService
     /**
      * Init
      * @throws AccountException
-     * @throws \stomemax\acme2\exceptions\NonceException
-     * @throws \stomemax\acme2\exceptions\OpenSSLException
-     * @throws \stomemax\acme2\exceptions\RequestException
+     * @throws \stonemax\acme2\exceptions\NonceException
+     * @throws \stonemax\acme2\exceptions\OpenSSLException
+     * @throws \stonemax\acme2\exceptions\RequestException
      */
     public function init()
     {
@@ -127,9 +127,9 @@ class AccountService
      * Create new account
      * @return array
      * @throws AccountException
-     * @throws \stomemax\acme2\exceptions\NonceException
-     * @throws \stomemax\acme2\exceptions\OpenSSLException
-     * @throws \stomemax\acme2\exceptions\RequestException
+     * @throws \stonemax\acme2\exceptions\NonceException
+     * @throws \stonemax\acme2\exceptions\OpenSSLException
+     * @throws \stonemax\acme2\exceptions\RequestException
      */
     private function createAccount()
     {
@@ -175,8 +175,8 @@ class AccountService
      * Get account info
      * @return array
      * @throws AccountException
-     * @throws \stomemax\acme2\exceptions\NonceException
-     * @throws \stomemax\acme2\exceptions\RequestException
+     * @throws \stonemax\acme2\exceptions\NonceException
+     * @throws \stonemax\acme2\exceptions\RequestException
      */
     public function getAccount()
     {
@@ -204,8 +204,8 @@ class AccountService
      * Get account url
      * @return string
      * @throws AccountException
-     * @throws \stomemax\acme2\exceptions\NonceException
-     * @throws \stomemax\acme2\exceptions\RequestException
+     * @throws \stonemax\acme2\exceptions\NonceException
+     * @throws \stonemax\acme2\exceptions\RequestException
      */
     public function getAccountUrl()
     {
@@ -241,8 +241,8 @@ class AccountService
      * @param $emailList
      * @return array
      * @throws AccountException
-     * @throws \stomemax\acme2\exceptions\NonceException
-     * @throws \stomemax\acme2\exceptions\RequestException
+     * @throws \stonemax\acme2\exceptions\NonceException
+     * @throws \stonemax\acme2\exceptions\RequestException
      */
     public function updateAccountContact($emailList)
     {
@@ -276,9 +276,9 @@ class AccountService
     /**
      * Update accout private/public keys
      * @throws AccountException
-     * @throws \stomemax\acme2\exceptions\NonceException
-     * @throws \stomemax\acme2\exceptions\OpenSSLException
-     * @throws \stomemax\acme2\exceptions\RequestException
+     * @throws \stonemax\acme2\exceptions\NonceException
+     * @throws \stonemax\acme2\exceptions\OpenSSLException
+     * @throws \stonemax\acme2\exceptions\RequestException
      */
     public function updateAccountKey()
     {
@@ -325,8 +325,8 @@ class AccountService
      * Deactivate account
      * @return array
      * @throws AccountException
-     * @throws \stomemax\acme2\exceptions\NonceException
-     * @throws \stomemax\acme2\exceptions\RequestException
+     * @throws \stonemax\acme2\exceptions\NonceException
+     * @throws \stonemax\acme2\exceptions\RequestException
      */
     public function deactivateAccount()
     {
@@ -364,7 +364,7 @@ class AccountService
      * Create private/public key pair files
      * @param array|null $keyPair
      * @throws AccountException
-     * @throws \stomemax\acme2\exceptions\OpenSSLException
+     * @throws \stonemax\acme2\exceptions\OpenSSLException
      */
     private function createKeyPairFile($keyPair = NULL)
     {

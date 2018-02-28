@@ -8,11 +8,11 @@
  * @license https://opensource.org/licenses/mit-license.php MIT License
  */
 
-namespace stomemax\acme2;
+namespace stonemax\acme2;
 
 /**
  * Class Client
- * @package stomemax\acme2
+ * @package stonemax\acme2
  */
 class Client
 {
@@ -42,5 +42,19 @@ class Client
     public function getAccount()
     {
         return self::$runtime->account;
+    }
+
+    /**
+     * Get order service instance
+     * @param string $baseDomain
+     * @param array $domainList
+     * @param string $algorithm
+     * @param string $notBefore
+     * @param string $notAfter
+     * @return services\OrderService
+     */
+    public function getOrder($baseDomain, $domainList, $algorithm, $notBefore = '', $notAfter = '')
+    {
+        return self::$runtime->getOrder($baseDomain, $domainList, $algorithm, $notBefore, $notAfter);
     }
 }

@@ -8,15 +8,15 @@
  * @license https://opensource.org/licenses/mit-license.php MIT License
  */
 
-namespace stomemax\acme2\helpers;
+namespace stonemax\acme2\helpers;
 
-use stomemax\acme2\Client;
-use stomemax\acme2\constants\CommonConstant;
-use stomemax\acme2\exceptions\OpenSSLException;
+use stonemax\acme2\Client;
+use stonemax\acme2\constants\CommonConstant;
+use stonemax\acme2\exceptions\OpenSSLException;
 
 /**
  * Class OpenSSLHelper
- * @package stomemax\acme2\helpers
+ * @package stonemax\acme2\helpers
  */
 class OpenSSLHelper
 {
@@ -93,13 +93,67 @@ class OpenSSLHelper
     }
 
     /**
+     * Generate CSR content
+     * @param array $domainList
+     * @param array $dn
+     * @param string $privateKey
+     * @return mixed
+     */
+    public static function generateCSR($domainList, $dn, $privateKey)
+    {
+        $san = array_map(
+            function($domain) {
+                return "DNS:{$domain}";
+            },
+            $domainList
+        );
+
+        $opensslConfigFileResource = tmpfile();
+        $opensslConfigFileMeta = stream_get_meta_data($opensslConfigFileResource);
+        $opensslConfigFilePath = $opensslConfigFileMeta['uri'];
+
+        $content = "
+            HOME = .
+            RANDFILE = \$ENV::HOME/.rnd
+            [ req ]
+            default_bits = 4096
+            default_keyfile = privkey.pem
+            distinguished_name = req_distinguished_name
+            req_extensions = v3_req
+            [ req_distinguished_name ]
+            countryName = Country Name (2 letter code)
+            [ v3_req ]
+            basicConstraints = CA:FALSE
+            subjectAltName = ".implode(',', $san)."
+            keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+        ";
+
+        fwrite($opensslConfigFileResource, $content);
+
+        $privateKey = openssl_pkey_get_private($privateKey);
+
+        $csr = openssl_csr_new(
+            $dn,
+            $privateKey,
+            [
+                'config' => $opensslConfigFilePath,
+                'digest_alg' => 'sha256',
+            ]
+        );
+
+        openssl_csr_export($csr, $csr);
+
+        return $csr;
+    }
+
+    /**
      * Generate JWS(Json Web Signature) with field `jwk`
      * @param string $url
      * @param array|string $payload
      * @param string|null $privateKey
      * @return string
-     * @throws \stomemax\acme2\exceptions\NonceException
-     * @throws \stomemax\acme2\exceptions\RequestException
+     * @throws \stonemax\acme2\exceptions\NonceException
+     * @throws \stonemax\acme2\exceptions\RequestException
      */
     public static function generateJWSOfJWK($url, $payload, $privateKey = NULL)
     {
@@ -136,8 +190,8 @@ class OpenSSLHelper
      * @param string $kid
      * @param array|string $payload
      * @return string
-     * @throws \stomemax\acme2\exceptions\NonceException
-     * @throws \stomemax\acme2\exceptions\RequestException
+     * @throws \stonemax\acme2\exceptions\NonceException
+     * @throws \stonemax\acme2\exceptions\RequestException
      */
     public static function generateJWSOfKid($url, $kid, $payload)
     {

@@ -8,16 +8,16 @@
  * @license https://opensource.org/licenses/mit-license.php MIT License
  */
 
-namespace stomemax\acme2\services;
+namespace stonemax\acme2\services;
 
-use stomemax\acme2\Client;
-use stomemax\acme2\exceptions\NonceException;
-use stomemax\acme2\helpers\CommonHelper;
-use stomemax\acme2\helpers\RequestHelper;
+use stonemax\acme2\Client;
+use stonemax\acme2\exceptions\NonceException;
+use stonemax\acme2\helpers\CommonHelper;
+use stonemax\acme2\helpers\RequestHelper;
 
 /**
  * Class NonceService
- * @package stomemax\acme2\services
+ * @package stonemax\acme2\services
  */
 class NonceService
 {
@@ -39,7 +39,7 @@ class NonceService
      * Get nonce
      * @return string
      * @throws NonceException
-     * @throws \stomemax\acme2\exceptions\RequestException
+     * @throws \stonemax\acme2\exceptions\RequestException
      */
     public function get()
     {
@@ -76,7 +76,7 @@ class NonceService
      * Get new nonce for next request
      * @return string
      * @throws NonceException
-     * @throws \stomemax\acme2\exceptions\RequestException
+     * @throws \stonemax\acme2\exceptions\RequestException
      */
     private function getNew()
     {

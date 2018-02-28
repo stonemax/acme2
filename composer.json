@@ -13,7 +13,7 @@
     "require": {},
     "autoload": {
         "psr-4": {
-            "stomemax\\acme2\\": "src/"
+            "stonemax\\acme2\\": "src/"
         }
     }
 }

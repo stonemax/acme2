@@ -9,11 +9,11 @@
  */
 
 
-namespace stomemax\acme2\exceptions;
+namespace stonemax\acme2\exceptions;
 
 /**
  * Class RuntimeException
- * @package stomemax\acme2\exceptions
+ * @package stonemax\acme2\exceptions
  */
 class RuntimeException extends \Exception
 {

@@ -8,18 +8,18 @@
  * @license https://opensource.org/licenses/mit-license.php MIT License
  */
 
-namespace stomemax\acme2\services;
+namespace stonemax\acme2\services;
 
-use stomemax\acme2\Client;
-use stomemax\acme2\constants\CommonConstant;
-use stomemax\acme2\exceptions\AuthorizationException;
-use stomemax\acme2\helpers\CommonHelper;
-use stomemax\acme2\helpers\OpenSSLHelper;
-use stomemax\acme2\helpers\RequestHelper;
+use stonemax\acme2\Client;
+use stonemax\acme2\constants\CommonConstant;
+use stonemax\acme2\exceptions\AuthorizationException;
+use stonemax\acme2\helpers\CommonHelper;
+use stonemax\acme2\helpers\OpenSSLHelper;
+use stonemax\acme2\helpers\RequestHelper;
 
 /**
  * Class AuthorizationService
- * @package stomemax\acme2\services
+ * @package stonemax\acme2\services
  */
 class AuthorizationService
 {
@@ -57,7 +57,7 @@ class AuthorizationService
      * AuthorizationService constructor.
      * @param string $authorizationUrl
      * @throws AuthorizationException
-     * @throws \stomemax\acme2\exceptions\RequestException
+     * @throws \stonemax\acme2\exceptions\RequestException
      */
     public function __construct($authorizationUrl)
     {
@@ -70,7 +70,7 @@ class AuthorizationService
      * Get authorization info
      * @return array
      * @throws AuthorizationException
-     * @throws \stomemax\acme2\exceptions\RequestException
+     * @throws \stonemax\acme2\exceptions\RequestException
      */
     public function getAuthorization()
     {
@@ -110,9 +110,9 @@ class AuthorizationService
      * @param string $thumbprint
      * @return bool
      * @throws AuthorizationException
-     * @throws \stomemax\acme2\exceptions\AccountException
-     * @throws \stomemax\acme2\exceptions\NonceException
-     * @throws \stomemax\acme2\exceptions\RequestException
+     * @throws \stonemax\acme2\exceptions\AccountException
+     * @throws \stonemax\acme2\exceptions\NonceException
+     * @throws \stonemax\acme2\exceptions\RequestException
      */
     public function verify($type, $thumbprint)
     {
@@ -139,7 +139,7 @@ class AuthorizationService
 
         while ($this->status == 'pending')
         {
-            sleep(1);
+            sleep(3);
 
             $this->getAuthorization();
         }
@@ -152,15 +152,16 @@ class AuthorizationService
      * @param string $type
      * @param string $keyAuthorization
      * @return bool
-     * @throws \stomemax\acme2\exceptions\RequestException
+     * @throws \stonemax\acme2\exceptions\RequestException
      */
     private function verifyLocally($type, $keyAuthorization)
     {
         $challenge = $this->getChallenge($type);
+        $domain = $this->identifier['value'];
 
         if ($type == CommonConstant::CHALLENGE_TYPE_HTTP)
         {
-            if (!CommonHelper::checkHttpChallenge($challenge['identifier'], $challenge['token'], $keyAuthorization))
+            if (!CommonHelper::checkHttpChallenge($domain, $challenge['token'], $keyAuthorization))
             {
                 return FALSE;
             }
@@ -169,7 +170,7 @@ class AuthorizationService
         {
             $dnsContent = CommonHelper::base64UrlSafeEncode(hash('sha256', $keyAuthorization, TRUE));
 
-            if (!CommonHelper::checkDNSChallenge($challenge['identifier'], $dnsContent))
+            if (!CommonHelper::checkDNSChallenge($domain, $dnsContent))
             {
                 return FALSE;
             }

@@ -8,11 +8,11 @@
  * @license https://opensource.org/licenses/mit-license.php MIT License
  */
 
-namespace stomemax\acme2\constants;
+namespace stonemax\acme2\constants;
 
 /**
  * Class CommonConstant
- * @package stomemax\acme2\constants
+ * @package stonemax\acme2\constants
  */
 class CommonConstant
 {

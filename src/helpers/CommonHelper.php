@@ -8,11 +8,11 @@
  * @license https://opensource.org/licenses/mit-license.php MIT License
  */
 
-namespace stomemax\acme2\helpers;
+namespace stonemax\acme2\helpers;
 
 /**
  * Class CommonHelper
- * @package stomemax\acme2\helpers
+ * @package stonemax\acme2\helpers
  */
 class CommonHelper
 {
@@ -68,7 +68,7 @@ class CommonHelper
      * @param string $fileName
      * @param string $fileContent
      * @return bool
-     * @throws \stomemax\acme2\exceptions\RequestException
+     * @throws \stonemax\acme2\exceptions\RequestException
      */
     public static function checkHttpChallenge($domain, $fileName, $fileContent)
     {
@@ -98,16 +98,65 @@ class CommonHelper
     public static function checkDNSChallenge($domain, $dnsContent)
     {
         $host = '_acme-challenge.'.str_replace('*.', '', $domain);
-        $recordList = dns_get_record($host, DNS_TXT);
+        $recordList = @dns_get_record($host, DNS_TXT);
 
-        foreach ($recordList as $record)
+        if (is_array($recordList))
         {
-            if ($record['host'] == $host && $record['type'] == 'TXT' && $record['txt'] == $dnsContent)
+            foreach ($recordList as $record)
             {
-                return TRUE;
+                if ($record['host'] == $host && $record['type'] == 'TXT' && $record['txt'] == $dnsContent)
+                {
+                    return TRUE;
+                }
             }
         }
 
         return FALSE;
+    }
+
+    /**
+     * Get csr content without comment
+     * @param string $csr
+     * @return string
+     */
+    public static function getCSRWithoutComment($csr)
+    {
+        $pattern = '/-----BEGIN\sCERTIFICATE\sREQUEST-----(.*)-----END\sCERTIFICATE\sREQUEST-----/is';
+
+        if (preg_match($pattern, $csr, $matches))
+        {
+            return trim($matches[1]);
+        }
+
+        return $csr;
+    }
+
+    /**
+     * Extract certificate from server response
+     * @param string $certificateFromServer
+     * @return array|null
+     */
+    public static function getCertificate($certificateFromServer)
+    {
+        $certificate = '';
+        $certificateFullChained = '';
+        $pattern = '/-----BEGIN\sCERTIFICATE-----(.*?)-----END\sCERTIFICATE-----/is';
+
+        if (preg_match_all($pattern, $certificateFromServer, $matches))
+        {
+            $certificate = trim($matches[0][0]);
+
+            foreach ($matches[0] as $match)
+            {
+                $certificateFullChained .= trim($match)."\n";
+            }
+
+            return [
+                'certificate' => $certificate,
+                'certificateFullChained' => trim($certificateFullChained),
+            ];
+        }
+
+        return NULL;
     }
 }

@@ -8,15 +8,15 @@
  * @license https://opensource.org/licenses/mit-license.php MIT License
  */
 
-namespace stomemax\acme2\services;
+namespace stonemax\acme2\services;
 
-use stomemax\acme2\Client;
-use stomemax\acme2\exceptions\EndpointException;
-use stomemax\acme2\helpers\RequestHelper;
+use stonemax\acme2\Client;
+use stonemax\acme2\exceptions\EndpointException;
+use stonemax\acme2\helpers\RequestHelper;
 
 /**
  * Class EndpointService
- * @package stomemax\acme2\services
+ * @package stonemax\acme2\services
  */
 class EndpointService
 {
@@ -48,7 +48,7 @@ class EndpointService
     /**
      * EndpointService constructor.
      * @throws EndpointException
-     * @throws \stomemax\acme2\exceptions\RequestException
+     * @throws \stonemax\acme2\exceptions\RequestException
      */
     public function __construct()
     {
@@ -58,7 +58,7 @@ class EndpointService
     /**
      * Populate endpoint info
      * @throws EndpointException
-     * @throws \stomemax\acme2\exceptions\RequestException
+     * @throws \stonemax\acme2\exceptions\RequestException
      */
     private function populate()
     {

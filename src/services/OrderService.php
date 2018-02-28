@@ -195,7 +195,7 @@ class OrderService
      * @throws \stonemax\acme2\exceptions\NonceException
      * @throws \stonemax\acme2\exceptions\RequestException
      */
-    public function createOrder()
+    private function createOrder()
     {
         $identifierList = [];
 
@@ -247,7 +247,7 @@ class OrderService
      * @throws OrderException
      * @throws \stonemax\acme2\exceptions\RequestException
      */
-    public function getOrder()
+    private function getOrder()
     {
         $orderUrl = file_get_contents($this->_orderInfoPath);
 
@@ -271,7 +271,7 @@ class OrderService
      */
     public function getPendingChallenge($type)
     {
-        if ($this->isOrderFinalized() === TRUE)
+        if ($this->isOrderFinalized() === TRUE || $this->isAllAuthorizationValid() === TRUE)
         {
             return [];
         }
@@ -323,7 +323,6 @@ class OrderService
     /**
      * Verify authorization challenges
      * @param int $type
-     * @return array
      * @throws \stonemax\acme2\exceptions\AccountException
      * @throws \stonemax\acme2\exceptions\AuthorizationException
      * @throws \stonemax\acme2\exceptions\NonceException
@@ -331,9 +330,9 @@ class OrderService
      */
     public function verifyChallenge($type)
     {
-        if ($this->isOrderFinalized() === TRUE)
+        if ($this->isOrderFinalized() === TRUE || $this->isAllAuthorizationValid() === TRUE)
         {
-            return [];
+            return;
         }
 
         $thumbprint = $this->generateThumbprint();
@@ -380,7 +379,12 @@ class OrderService
      */
     public function getCertificateFile($csr = NULL)
     {
-        if (!$this->isOrderFinalized())
+        if ($this->isAllAuthorizationValid() === FALSE)
+        {
+            throw new OrderException("There are still some authorizations that are not valid.");
+        }
+
+        if ($this->status == 'pending')
         {
             if (!$csr)
             {
@@ -404,7 +408,7 @@ class OrderService
             throw new OrderException("Fetch certificate from letsencrypt failed, the url is: {$this->certificate}, the domain list is: ".implode(', ', $this->_domainList).", the code is: {$code}, the header is: {$header}, the body is: ".print_r($body, TRUE));
         }
 
-        $certificateMap = CommonHelper::getCertificate($body);
+        $certificateMap = CommonHelper::extractCertificate($body);
 
         file_put_contents($this->_certificatePath, $certificateMap['certificate']);
         file_put_contents($this->_certificateFullChainedPath, $certificateMap['certificateFullChained']);
@@ -413,6 +417,49 @@ class OrderService
             'certificate' => realpath($this->_certificatePath),
             'certificateFullChained' => realpath($this->_certificateFullChainedPath),
         ];
+    }
+
+    /**
+     * Revoke certificate
+     * @param int $reason you can find the code in `https://tools.ietf.org/html/rfc5280#section-5.3.1`
+     * @return bool
+     * @throws OrderException
+     * @throws \stonemax\acme2\exceptions\NonceException
+     * @throws \stonemax\acme2\exceptions\OpenSSLException
+     * @throws \stonemax\acme2\exceptions\RequestException
+     */
+    public function revokeCertificate($reason = 0)
+    {
+        if ($this->status != 'valid')
+        {
+            throw new OrderException("Revoke certificate failed because of invalid status({$this->status})");
+        }
+
+        if (!is_file($this->_certificatePath))
+        {
+            throw new OrderException("Revoke certificate failed because of certicate file missing({$this->_certificatePath})");
+        }
+
+        $certificate = CommonHelper::getCertificateWithoutComment(file_get_contents($this->_certificatePath));
+        $certificate = trim(CommonHelper::base64UrlSafeEncode(base64_decode($certificate)));
+
+        $jws = OpenSSLHelper::generateJWSOfJWK(
+            Client::$runtime->endpoint->revokeCert,
+            [
+                'certificate' => $certificate,
+                'reason' => $reason,
+            ],
+            $this->getPrivateKey()
+        );
+
+        list($code, $header, $body) = RequestHelper::post(Client::$runtime->endpoint->revokeCert, $jws);
+
+        if ($code != 200)
+        {
+            throw new OrderException("Revoke certificate failed, the domain list is: ".implode(', ', $this->_domainList).", the code is: {$code}, the header is: {$header}, the body is: ".print_r($body, TRUE));
+        }
+
+        return TRUE;
     }
 
     /**

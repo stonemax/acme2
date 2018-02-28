@@ -132,11 +132,28 @@ class CommonHelper
     }
 
     /**
+     * Get certificate content without comment
+     * @param string $certificate
+     * @return string
+     */
+    public static function getCertificateWithoutComment($certificate)
+    {
+        $pattern = '/-----BEGIN\sCERTIFICATE-----(.*)-----END\sCERTIFICATE-----/is';
+
+        if (preg_match($pattern, $certificate, $matches))
+        {
+            return trim($matches[1]);
+        }
+
+        return $certificate;
+    }
+
+    /**
      * Extract certificate from server response
      * @param string $certificateFromServer
      * @return array|null
      */
-    public static function getCertificate($certificateFromServer)
+    public static function extractCertificate($certificateFromServer)
     {
         $certificate = '';
         $certificateFullChained = '';

@@ -147,6 +147,25 @@ class OpenSSLHelper
     }
 
     /**
+     * Generate thumbprint
+     * @param string|null $privateKey
+     * @return mixed
+     */
+    public static function generateThumbprint($privateKey = NULL)
+    {
+        $privateKey = openssl_pkey_get_private($privateKey ?: Client::$runtime->account->getPrivateKey());
+        $detail = openssl_pkey_get_details($privateKey);
+
+        $accountKey = [
+            'e' => CommonHelper::base64UrlSafeEncode($detail['rsa']['e']),
+            'kty' => 'RSA',
+            'n' => CommonHelper::base64UrlSafeEncode($detail['rsa']['n']),
+        ];
+
+        return CommonHelper::base64UrlSafeEncode(hash('sha256', json_encode($accountKey), TRUE));
+    }
+
+    /**
      * Generate JWS(Json Web Signature) with field `jwk`
      * @param string $url
      * @param array|string $payload

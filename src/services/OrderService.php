@@ -84,6 +84,12 @@ class OrderService
     private $_domainList;
 
     /**
+     * Domain challenge type info
+     * @var array
+     */
+    private $_domainChallengeTypeMap;
+
+    /**
      * Certificate encrypt type
      * @var int
      */
@@ -140,7 +146,7 @@ class OrderService
     /**
      * OrderService constructor.
      * @param string $baseDomain
-     * @param array $domainList
+     * @param array $domainInfo
      * @param string $algorithm
      * @param string $notBefore
      * @param string $notAfter
@@ -149,16 +155,40 @@ class OrderService
      * @throws \stonemax\acme2\exceptions\NonceException
      * @throws \stonemax\acme2\exceptions\RequestException
      */
-    public function __construct($baseDomain, $domainList, $algorithm, $notBefore, $notAfter)
+    public function __construct($baseDomain, $domainInfo, $algorithm, $notBefore, $notAfter)
     {
         $this->_baseDomain = $baseDomain;
-        $this->_domainList = $domainList;
         $this->_algorithm = $algorithm;
         $this->_notBefore = $notBefore;
         $this->_notAfter = $notAfter;
 
+        foreach ($domainInfo as $challengeType => $domainList)
+        {
+            foreach ($domainList as $domain)
+            {
+                $domain = trim($domain);
+
+                $this->_domainList[] = $domain;
+                $this->_domainChallengeTypeMap[$domain] = $challengeType;
+            }
+        }
+
+        $this->_domainList = array_unique($this->_domainList);
+
         sort($this->_domainList);
 
+        $this->init();
+    }
+
+    /**
+     * Initialization
+     * @throws OrderException
+     * @throws \stonemax\acme2\exceptions\AccountException
+     * @throws \stonemax\acme2\exceptions\NonceException
+     * @throws \stonemax\acme2\exceptions\RequestException
+     */
+    public function init()
+    {
         $flag = substr(md5(implode(',', $this->_domainList)), 11, 8);
 
         $algorithmNameMap = [
@@ -166,7 +196,7 @@ class OrderService
             CommonConstant::KEY_PAIR_TYPE_EC => 'ec',
         ];
 
-        $algorithmName = $algorithmNameMap[$algorithm];
+        $algorithmName = $algorithmNameMap[$this->_algorithm];
         $basePath = Client::$runtime->storagePath.DIRECTORY_SEPARATOR.$flag.DIRECTORY_SEPARATOR.$algorithmName;
 
         if (!is_dir($basePath))
@@ -270,10 +300,9 @@ class OrderService
 
     /**
      * Get pending challenges info
-     * @param int $type
-     * @return array
+     * @return ChallengeService[]
      */
-    public function getPendingChallenge($type)
+    public function getPendingChallengeList()
     {
         if ($this->isOrderFinalized() === TRUE || $this->isAllAuthorizationValid() === TRUE)
         {
@@ -281,16 +310,17 @@ class OrderService
         }
 
         $challengeList = [];
-        $thumbprint = $this->generateThumbprint();
+        $thumbprint = OpenSSLHelper::generateThumbprint();
 
-        foreach ($this->_authorizationList as $domain => $authorization)
+        foreach ($this->_authorizationList as $authorization)
         {
             if ($authorization->status != 'pending')
             {
                 continue;
             }
 
-            $challenge = $authorization->getChallenge($type);
+            $challengeType = $this->_domainChallengeTypeMap[$authorization->domain];
+            $challenge = $authorization->getChallenge($challengeType);
 
             if ($challenge['status'] != 'pending')
             {
@@ -298,12 +328,12 @@ class OrderService
             }
 
             $challengeContent = $challenge['token'].'.'.$thumbprint;
+            $challengeService = new ChallengeService($challengeType, $authorization);
 
             /* Generate challenge info for http-01 */
-            if ($type == CommonConstant::CHALLENGE_TYPE_HTTP)
+            if ($challengeType == CommonConstant::CHALLENGE_TYPE_HTTP)
             {
-                $challengeList[$domain] = [
-                    'type' => $type,
+                $challengeCredential = [
                     'identifier' => $authorization->identifier['value'],
                     'fileName' => $challenge['token'],
                     'fileContent' => $challengeContent,
@@ -313,56 +343,18 @@ class OrderService
             /* Generate challenge info for dns-01 */
             else
             {
-                $challengeList[$domain] = [
-                    'type' => $type,
+                $challengeCredential = [
                     'identifier' => $authorization->identifier['value'],
                     'dnsContent' => CommonHelper::base64UrlSafeEncode(hash('sha256', $challengeContent, TRUE)),
                 ];
             }
+
+            $challengeService->setCredential($challengeCredential);
+
+            $challengeList[] = $challengeService;
         }
 
         return $challengeList;
-    }
-
-    /**
-     * Verify authorization challenges
-     * @param string $domain
-     * @param int $type
-     * @throws \stonemax\acme2\exceptions\AccountException
-     * @throws \stonemax\acme2\exceptions\AuthorizationException
-     * @throws \stonemax\acme2\exceptions\NonceException
-     * @throws \stonemax\acme2\exceptions\RequestException
-     */
-    public function verifyChallenge($domain, $type)
-    {
-        if ($this->isOrderFinalized() === TRUE || $this->isAllAuthorizationValid() === TRUE)
-        {
-            return;
-        }
-
-        $thumbprint = $this->generateThumbprint();
-
-        foreach ($this->_authorizationList as $authorization)
-        {
-            if ($authorization->domain != $domain)
-            {
-                continue;
-            }
-
-            if ($authorization->status != 'pending')
-            {
-                continue;
-            }
-
-            $challenge = $authorization->getChallenge($type);
-
-            if ($challenge['status'] != 'pending')
-            {
-                continue;
-            }
-
-            $authorization->verify($type, $thumbprint);
-        }
     }
 
     /**
@@ -525,7 +517,7 @@ class OrderService
         {
             $authorization = new AuthorizationService($authorizationUrl);
 
-            $this->_authorizationList[$authorization->domain] = $authorization;
+            $this->_authorizationList[] = $authorization;
         }
     }
 
@@ -621,24 +613,6 @@ class OrderService
         {
             throw new OrderException('Create order key pair files failed, the domain list is: '.implode(', ', $this->_domainList).", the private key path is: {$this->_privateKeyPath}, the public key path is: {$this->_publicKeyPath}");
         }
-    }
-
-    /**
-     * Generate thumbprint
-     * @return mixed
-     */
-    private function generateThumbprint()
-    {
-        $privateKey = openssl_pkey_get_private(Client::$runtime->account->getPrivateKey());
-        $detail = openssl_pkey_get_details($privateKey);
-
-        $accountKey = [
-            'e' => CommonHelper::base64UrlSafeEncode($detail['rsa']['e']),
-            'kty' => 'RSA',
-            'n' => CommonHelper::base64UrlSafeEncode($detail['rsa']['n']),
-        ];
-
-        return CommonHelper::base64UrlSafeEncode(hash('sha256', json_encode($accountKey), TRUE));
     }
 
     /**

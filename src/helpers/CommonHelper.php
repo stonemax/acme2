@@ -9,6 +9,7 @@
  */
 
 namespace stonemax\acme2\helpers;
+use stonemax\acme2\exceptions\RequestException;
 
 /**
  * Class CommonHelper
@@ -68,7 +69,6 @@ class CommonHelper
      * @param string $fileName
      * @param string $fileContent
      * @return bool
-     * @throws \stonemax\acme2\exceptions\RequestException
      */
     public static function checkHttpChallenge($domain, $fileName, $fileContent)
     {
@@ -78,7 +78,14 @@ class CommonHelper
         {
             $url = "{$schema}://$baseUrl";
 
-            list(, , $body) = RequestHelper::get($url);
+            try
+            {
+                list(, , $body) = RequestHelper::get($url);
+            }
+            catch (RequestException $e)
+            {
+                continue;
+            }
 
             if ($body == $fileContent)
             {

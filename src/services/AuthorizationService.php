@@ -119,17 +119,22 @@ class AuthorizationService
     /**
      * Make letsencrypt to verify
      * @param string $type
-     * @param string $thumbprint
      * @return bool
      * @throws AuthorizationException
      * @throws \stonemax\acme2\exceptions\AccountException
      * @throws \stonemax\acme2\exceptions\NonceException
      * @throws \stonemax\acme2\exceptions\RequestException
      */
-    public function verify($type, $thumbprint)
+    public function verify($type)
     {
         $challenge = $this->getChallenge($type);
-        $keyAuthorization = $challenge['token'].'.'.$thumbprint;
+
+        if ($this->status != 'pending' || $challenge['status'] != 'pending')
+        {
+            return TRUE;
+        }
+
+        $keyAuthorization = $challenge['token'].'.'.OpenSSLHelper::generateThumbprint();
 
         while (!$this->verifyLocally($type, $keyAuthorization))
         {
@@ -154,6 +159,11 @@ class AuthorizationService
             sleep(3);
 
             $this->getAuthorization();
+        }
+
+        if ($this->status == 'invalid')
+        {
+            throw new AuthorizationException("Verify {$this->domain} failed, the authorization status becomes invalid.");
         }
 
         return TRUE;

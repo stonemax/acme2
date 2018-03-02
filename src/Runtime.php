@@ -78,7 +78,7 @@ class Runtime
     public function __construct($emailList, $storagePath, $staging = FALSE)
     {
         $this->emailList = array_filter(array_unique($emailList));
-        $this->storagePath = rtrim(trim($storagePath), '/');
+        $this->storagePath = rtrim(trim($storagePath), '/\\');
         $this->staging = boolval($staging);
 
         sort($this->emailList);

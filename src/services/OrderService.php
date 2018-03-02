@@ -24,7 +24,7 @@ use stonemax\acme2\helpers\RequestHelper;
 class OrderService
 {
     /**
-     * Order status: pending, processing, valid
+     * Order status: pending, processing, valid, invalid
      * @var string
      */
     public $status;
@@ -157,13 +157,17 @@ class OrderService
         $this->_notBefore = $notBefore;
         $this->_notAfter = $notAfter;
 
+        sort($this->_domainList);
+
+        $flag = substr(md5(implode(',', $this->_domainList)), 11, 8);
+
         $algorithmNameMap = [
             CommonConstant::KEY_PAIR_TYPE_RSA => 'rsa',
             CommonConstant::KEY_PAIR_TYPE_EC => 'ec',
         ];
 
         $algorithmName = $algorithmNameMap[$algorithm];
-        $basePath = Client::$runtime->storagePath.DIRECTORY_SEPARATOR.$algorithmName;
+        $basePath = Client::$runtime->storagePath.DIRECTORY_SEPARATOR.$flag.DIRECTORY_SEPARATOR.$algorithmName;
 
         if (!is_dir($basePath))
         {
@@ -279,7 +283,7 @@ class OrderService
         $challengeList = [];
         $thumbprint = $this->generateThumbprint();
 
-        foreach ($this->_authorizationList as $authorization)
+        foreach ($this->_authorizationList as $domain => $authorization)
         {
             if ($authorization->status != 'pending')
             {
@@ -298,7 +302,7 @@ class OrderService
             /* Generate challenge info for http-01 */
             if ($type == CommonConstant::CHALLENGE_TYPE_HTTP)
             {
-                $challengeList[] = [
+                $challengeList[$domain] = [
                     'type' => $type,
                     'identifier' => $authorization->identifier['value'],
                     'fileName' => $challenge['token'],
@@ -309,7 +313,7 @@ class OrderService
             /* Generate challenge info for dns-01 */
             else
             {
-                $challengeList[] = [
+                $challengeList[$domain] = [
                     'type' => $type,
                     'identifier' => $authorization->identifier['value'],
                     'dnsContent' => CommonHelper::base64UrlSafeEncode(hash('sha256', $challengeContent, TRUE)),
@@ -322,13 +326,14 @@ class OrderService
 
     /**
      * Verify authorization challenges
+     * @param string $domain
      * @param int $type
      * @throws \stonemax\acme2\exceptions\AccountException
      * @throws \stonemax\acme2\exceptions\AuthorizationException
      * @throws \stonemax\acme2\exceptions\NonceException
      * @throws \stonemax\acme2\exceptions\RequestException
      */
-    public function verifyChallenge($type)
+    public function verifyChallenge($domain, $type)
     {
         if ($this->isOrderFinalized() === TRUE || $this->isAllAuthorizationValid() === TRUE)
         {
@@ -337,34 +342,26 @@ class OrderService
 
         $thumbprint = $this->generateThumbprint();
 
-        while (TRUE)
+        foreach ($this->_authorizationList as $authorization)
         {
-            $failCount = 0;
-
-            foreach ($this->_authorizationList as $authorization)
+            if ($authorization->domain != $domain)
             {
-                if ($authorization->status != 'pending')
-                {
-                    continue;
-                }
-
-                $challenge = $authorization->getChallenge($type);
-
-                if ($challenge['status'] != 'pending')
-                {
-                    continue;
-                }
-
-                if ($authorization->verify($type, $thumbprint) === FALSE)
-                {
-                    $failCount++;
-                }
+                continue;
             }
 
-            if ($failCount == 0)
+            if ($authorization->status != 'pending')
             {
-                break;
+                continue;
             }
+
+            $challenge = $authorization->getChallenge($type);
+
+            if ($challenge['status'] != 'pending')
+            {
+                continue;
+            }
+
+            $authorization->verify($type, $thumbprint);
         }
     }
 
@@ -414,6 +411,8 @@ class OrderService
         file_put_contents($this->_certificateFullChainedPath, $certificateMap['certificateFullChained']);
 
         return [
+            'privateKey' => realpath($this->_privateKeyPath),
+            'publicKey' => realpath($this->_publicKeyPath),
             'certificate' => realpath($this->_certificatePath),
             'certificateFullChained' => realpath($this->_certificateFullChainedPath),
         ];
@@ -524,7 +523,9 @@ class OrderService
 
         foreach ($this->authorizations as $authorizationUrl)
         {
-            $this->_authorizationList[] = new AuthorizationService($authorizationUrl);
+            $authorization = new AuthorizationService($authorizationUrl);
+
+            $this->_authorizationList[$authorization->domain] = $authorization;
         }
     }
 

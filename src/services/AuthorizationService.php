@@ -30,7 +30,7 @@ class AuthorizationService
     public $identifier;
 
     /**
-     * Authorization status
+     * Authorization status: pending, valid, invalid
      * @var string
      */
     public $status;
@@ -46,6 +46,18 @@ class AuthorizationService
      * @var array
      */
     public $challenges;
+
+    /**
+     * Wildcard domain or not
+     * @var bool
+     */
+    public $wildcard = FALSE;
+
+    /**
+     * Initial domain name
+     * @var string
+     */
+    public $domain;
 
     /**
      * Access this url to get authorization info
@@ -119,9 +131,9 @@ class AuthorizationService
         $challenge = $this->getChallenge($type);
         $keyAuthorization = $challenge['token'].'.'.$thumbprint;
 
-        if ($this->verifyLocally($type, $keyAuthorization) === FALSE)
+        while (!$this->verifyLocally($type, $keyAuthorization))
         {
-            return FALSE;
+            sleep(3);
         }
 
         $jwk = OpenSSLHelper::generateJWSOfKid(
@@ -189,5 +201,7 @@ class AuthorizationService
         {
             $this->{$key} = $value;
         }
+
+        $this->domain = ($this->wildcard ? '*.' : '').$this->identifier['value'];
     }
 }

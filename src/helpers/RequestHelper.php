@@ -139,7 +139,7 @@ class RequestHelper
     {
         $crlf = "\r\n";
         $response = '';
-        $handler = fsockopen($hostWithSchema, $port, $errorNumber, $errorString, 10);
+        $handler = fsockopen($hostWithSchema, $port, $errorNumber, $errorString, 30);
 
         if (!$handler)
         {

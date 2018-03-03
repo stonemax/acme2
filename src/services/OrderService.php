@@ -90,18 +90,6 @@ class OrderService
     private $_algorithm;
 
     /**
-     * Certificate becomes valid at this time
-     * @var string
-     */
-    private $_notBefore;
-
-    /**
-     * Certificate becomes invalid until this time
-     * @var string
-     */
-    private $_notAfter;
-
-    /**
      * Is a new order
      * @var bool
      */
@@ -147,20 +135,21 @@ class OrderService
      * OrderService constructor.
      * @param array $domainInfo
      * @param string $algorithm
-     * @param string $notBefore
-     * @param string $notAfter
      * @param bool $renew
      * @throws OrderException
      * @throws \stonemax\acme2\exceptions\AccountException
      * @throws \stonemax\acme2\exceptions\NonceException
      * @throws \stonemax\acme2\exceptions\RequestException
      */
-    public function __construct($domainInfo, $algorithm, $notBefore, $notAfter, $renew = FALSE)
+    public function __construct($domainInfo, $algorithm, $renew = FALSE)
     {
         $this->_algorithm = $algorithm;
-        $this->_notBefore = $notBefore;
-        $this->_notAfter = $notAfter;
         $this->_renew = boolval($renew);
+
+        if ($this->_algorithm == CommonConstant::KEY_PAIR_TYPE_EC && version_compare(PHP_VERSION, '7.1.0') == -1)
+        {
+            throw new OrderException("PHP version 7.1 or higher required for generating EC certificates.");
+        }
 
         foreach ($domainInfo as $challengeType => $domainList)
         {
@@ -256,8 +245,8 @@ class OrderService
 
         $payload = [
             'identifiers' => $identifierList,
-            'notBefore' => $this->_notBefore,
-            'notAfter' => $this->_notAfter,
+            'notBefore' => '',
+            'notAfter' => '',
         ];
 
         $jws = OpenSSLHelper::generateJWSOfKid(

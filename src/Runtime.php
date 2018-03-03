@@ -102,8 +102,6 @@ class Runtime
      * Get order service instance
      * @param array $domainInfo
      * @param string $algorithm
-     * @param string $notBefore
-     * @param string $notAfter
      * @param bool $renew
      * @return OrderService
      * @throws exceptions\AccountException
@@ -111,11 +109,11 @@ class Runtime
      * @throws exceptions\OrderException
      * @throws exceptions\RequestException
      */
-    public function getOrder($domainInfo, $algorithm, $notBefore, $notAfter, $renew)
+    public function getOrder($domainInfo, $algorithm, $renew)
     {
         if (!$this->order)
         {
-            $this->order = new OrderService($domainInfo, $algorithm, $notBefore, $notAfter, $renew);
+            $this->order = new OrderService($domainInfo, $algorithm, $renew);
         }
 
         return $this->order;

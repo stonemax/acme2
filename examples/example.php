@@ -1,6 +1,6 @@
 <?php
 /**
- * dns php file
+ * example php file
  *
  * @author Zhang Jinlong <466028373@qq.com>
  * @link https://github.com/stonemax/acme2
@@ -26,8 +26,8 @@ $domainInfo = [
 
 $client = new Client(['alert@mail.com'], '../data/', TRUE);
 
-$order = $client->getOrder($domainInfo, CommonConstant::KEY_PAIR_TYPE_RSA, '', '');
-// $order = $client->getOrder($domainInfo, CommonConstant::KEY_PAIR_TYPE_RSA, '', '', TRUE);    // Renew certificates
+$order = $client->getOrder($domainInfo, CommonConstant::KEY_PAIR_TYPE_RSA);
+// $order = $client->getOrder($domainInfo, CommonConstant::KEY_PAIR_TYPE_RSA, TRUE);    // Renew certificates
 
 $challengeList = $order->getPendingChallengeList();
 
@@ -43,8 +43,8 @@ foreach ($challengeList as $challenge)
     /* http-01 */
     if ($challengeType == CommonConstant::CHALLENGE_TYPE_HTTP)
     {
-        /* example purpose, creates or updates the ACME challenge file for this domain */
-        createChallengeFile(
+        /* example purpose, create or update the ACME challenge file for this domain */
+        setChallengeFile(
             $credential['identifier'],
             $credential['fileName'],
             $credential['fileContent']);
@@ -53,7 +53,7 @@ foreach ($challengeList as $challenge)
     /* dns-01 */
     else if ($challengeType == CommonConstant::CHALLENGE_TYPE_DNS)
     {
-        /* example purpose, creates or updates the ACME challenge DNS record for this domain */
+        /* example purpose, create or update the ACME challenge DNS record for this domain */
         setDNSRecore(
             $credential['identifier'],
             $credential['dnsContent']

@@ -48,8 +48,6 @@ class Client
      * Get order service instance
      * @param array $domainInfo
      * @param string $algorithm
-     * @param string $notBefore
-     * @param string $notAfter
      * @param bool $renew
      * @return services\OrderService
      * @throws exceptions\AccountException
@@ -57,8 +55,8 @@ class Client
      * @throws exceptions\OrderException
      * @throws exceptions\RequestException
      */
-    public function getOrder($domainInfo, $algorithm, $notBefore = '', $notAfter = '', $renew = FALSE)
+    public function getOrder($domainInfo, $algorithm, $renew = FALSE)
     {
-        return self::$runtime->getOrder($domainInfo, $algorithm, $notBefore, $notAfter, $renew);
+        return self::$runtime->getOrder($domainInfo, $algorithm, $renew);
     }
 }

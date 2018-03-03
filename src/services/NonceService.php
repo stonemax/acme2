@@ -57,7 +57,7 @@ class NonceService
 
     /**
      * Set nonce
-     * @param $nonce
+     * @param string $nonce
      */
     public function set($nonce)
     {

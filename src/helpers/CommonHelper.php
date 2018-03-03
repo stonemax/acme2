@@ -9,6 +9,7 @@
  */
 
 namespace stonemax\acme2\helpers;
+
 use stonemax\acme2\exceptions\RequestException;
 
 /**

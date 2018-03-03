@@ -108,6 +108,12 @@ class OrderService
     private $_notAfter;
 
     /**
+     * Is a new order
+     * @var bool
+     */
+    private $_isNewOrder;
+
+    /**
      * Certificate private key file path
      * @var string
      */
@@ -144,23 +150,31 @@ class OrderService
     private $_orderInfoPath;
 
     /**
+     * Order info
+     * @var array
+     */
+    private $_orderInfo;
+
+    /**
      * OrderService constructor.
      * @param string $baseDomain
      * @param array $domainInfo
      * @param string $algorithm
      * @param string $notBefore
      * @param string $notAfter
+     * @param bool $isNewOrder
      * @throws OrderException
      * @throws \stonemax\acme2\exceptions\AccountException
      * @throws \stonemax\acme2\exceptions\NonceException
      * @throws \stonemax\acme2\exceptions\RequestException
      */
-    public function __construct($baseDomain, $domainInfo, $algorithm, $notBefore, $notAfter)
+    public function __construct($baseDomain, $domainInfo, $algorithm, $notBefore, $notAfter, $isNewOrder = FALSE)
     {
         $this->_baseDomain = $baseDomain;
         $this->_algorithm = $algorithm;
         $this->_notBefore = $notBefore;
         $this->_notAfter = $notAfter;
+        $this->_isNewOrder = boolval($isNewOrder);
 
         foreach ($domainInfo as $challengeType => $domainList)
         {
@@ -210,7 +224,7 @@ class OrderService
             '_csrPath' => 'certificate.csr',
             '_certificatePath' => 'certificate.crt',
             '_certificateFullChainedPath' => 'certificate-fullchained.crt',
-            '_orderInfoPath' => 'INFO',
+            '_orderInfoPath' => 'ORDER',
         ];
 
         foreach ($pathMap as $propertyName => $fileName)
@@ -218,7 +232,20 @@ class OrderService
             $this->{$propertyName} = $basePath.DIRECTORY_SEPARATOR.$fileName;
         }
 
+        if ($this->_isNewOrder)
+        {
+            foreach ($pathMap as $propertyName => $fileName)
+            {
+                @unlink($basePath.DIRECTORY_SEPARATOR.$fileName);
+            }
+        }
+
         is_file($this->_orderInfoPath) ? $this->getOrder() : $this->createOrder();
+
+        file_put_contents(
+            Client::$runtime->storagePath.DIRECTORY_SEPARATOR.$flag.DIRECTORY_SEPARATOR.'DOMAIN',
+            implode("\r\n", $this->_domainList)
+        );
     }
 
     /**
@@ -268,9 +295,8 @@ class OrderService
         $orderInfo = array_merge($body, ['orderUrl' => $orderUrl]);
 
         $this->populate($orderInfo);
+        $this->setOrderInfoToCache(['orderUrl' => $orderUrl]);
         $this->getAuthorizationList();
-
-        file_put_contents($this->_orderInfoPath, $orderUrl);
 
         return $orderInfo;
     }
@@ -283,7 +309,7 @@ class OrderService
      */
     private function getOrder()
     {
-        $orderUrl = file_get_contents($this->_orderInfoPath);
+        $orderUrl = $this->getOrderInfoFromCache()['orderUrl'];
 
         list($code, $header, $body) = RequestHelper::get($orderUrl);
 
@@ -292,7 +318,7 @@ class OrderService
             throw new OrderException("Get order info failed, the order url is: {$orderUrl}, the code is: {$code}, the header is: {$header}, the body is: ".print_r($body, TRUE));
         }
 
-        $this->populate($body);
+        $this->populate(array_merge($body, ['orderUrl' => $orderUrl]));
         $this->getAuthorizationList();
 
         return array_merge($body, ['orderUrl' => $orderUrl]);
@@ -402,11 +428,22 @@ class OrderService
         file_put_contents($this->_certificatePath, $certificateMap['certificate']);
         file_put_contents($this->_certificateFullChainedPath, $certificateMap['certificateFullChained']);
 
+        $certificateInfo = openssl_x509_parse($certificateMap['certificate']);
+
+        $this->setOrderInfoToCache([
+            'validFromTimestamp' => $certificateInfo['validFrom_time_t'],
+            'validToTimestamp' => $certificateInfo['validTo_time_t'],
+            'validFromTime' => date('Y-m-d H:i:s', $certificateInfo['validFrom_time_t']),
+            'validToTime' => date('Y-m-d H:i:s', $certificateInfo['validTo_time_t']),
+        ]);
+
         return [
             'privateKey' => realpath($this->_privateKeyPath),
             'publicKey' => realpath($this->_publicKeyPath),
             'certificate' => realpath($this->_certificatePath),
             'certificateFullChained' => realpath($this->_certificateFullChainedPath),
+            'validFromTimestamp' => $certificateInfo['validFrom_time_t'],
+            'validToTimestamp' => $certificateInfo['validTo_time_t'],
         ];
     }
 
@@ -613,6 +650,34 @@ class OrderService
         {
             throw new OrderException('Create order key pair files failed, the domain list is: '.implode(', ', $this->_domainList).", the private key path is: {$this->_privateKeyPath}, the public key path is: {$this->_publicKeyPath}");
         }
+    }
+
+    /**
+     * Get order basic info from file cache
+     * @return array
+     */
+    private function getOrderInfoFromCache()
+    {
+        $orderInfo = [];
+
+        if (is_file($this->_orderInfoPath))
+        {
+            $orderInfo = json_decode(file_get_contents($this->_orderInfoPath), TRUE);
+        }
+
+        return $orderInfo ?: [];
+    }
+
+    /**
+     * Set order basic info to file cache
+     * @param array $orderInfo
+     * @return bool|int
+     */
+    private function setOrderInfoToCache($orderInfo)
+    {
+        $orderInfo = array_merge($this->getOrderInfoFromCache(), $orderInfo);
+
+        return file_put_contents($this->_orderInfoPath, json_encode($orderInfo));
     }
 
     /**

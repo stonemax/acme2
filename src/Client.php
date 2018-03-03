@@ -51,10 +51,15 @@ class Client
      * @param string $algorithm
      * @param string $notBefore
      * @param string $notAfter
+     * @param bool $isNewOrder
      * @return services\OrderService
+     * @throws exceptions\AccountException
+     * @throws exceptions\NonceException
+     * @throws exceptions\OrderException
+     * @throws exceptions\RequestException
      */
-    public function getOrder($baseDomain, $domainList, $algorithm, $notBefore = '', $notAfter = '')
+    public function getOrder($baseDomain, $domainList, $algorithm, $notBefore = '', $notAfter = '', $isNewOrder = FALSE)
     {
-        return self::$runtime->getOrder($baseDomain, $domainList, $algorithm, $notBefore, $notAfter);
+        return self::$runtime->getOrder($baseDomain, $domainList, $algorithm, $notBefore, $notAfter, $isNewOrder);
     }
 }

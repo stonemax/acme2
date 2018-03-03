@@ -38,8 +38,8 @@ class ChallengeService
 
     /**
      * ChallengeService constructor.
-     * @param $type
-     * @param $authorization
+     * @param string $type
+     * @param \stonemax\acme2\services\AuthorizationService $authorization
      */
     public function __construct($type, $authorization)
     {
@@ -67,7 +67,7 @@ class ChallengeService
 
     /**
      * Set challenge credential
-     * @param $credential
+     * @param array $credential
      */
     public function setCredential($credential)
     {

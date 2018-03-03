@@ -43,7 +43,7 @@ foreach ($challengeList as $challenge)
     /* http-01 */
     if ($challengeType == CommonConstant::CHALLENGE_TYPE_HTTP)
     {
-        /* example purpose */
+        /* example purpose, creates or updates the ACME challenge file for this domain */
         createChallengeFile(
             $credential['identifier'],
             $credential['fileName'],
@@ -53,13 +53,14 @@ foreach ($challengeList as $challenge)
     /* dns-01 */
     else if ($challengeType == CommonConstant::CHALLENGE_TYPE_DNS)
     {
-        /* example purpose */
+        /* example purpose, creates or updates the ACME challenge DNS record for this domain */
         setDNSRecore(
             $credential['identifier'],
             $credential['dnsContent']
         );
     }
 
+    /* Infinite loop until the authorization status becomes valid */
     $challenge->verify();
 }
 

@@ -150,12 +150,6 @@ class OrderService
     private $_orderInfoPath;
 
     /**
-     * Order info
-     * @var array
-     */
-    private $_orderInfo;
-
-    /**
      * OrderService constructor.
      * @param string $baseDomain
      * @param array $domainInfo
@@ -287,7 +281,7 @@ class OrderService
             throw new OrderException('Create order failed, the domain list is: '.implode(', ', $this->_domainList).", the code is: {$code}, the header is: {$header}, the body is: ".print_r($body, TRUE));
         }
 
-        if (($orderUrl = CommonHelper::getLocationFiledFromHeader($header)) === FALSE)
+        if (($orderUrl = CommonHelper::getLocationFieldFromHeader($header)) === FALSE)
         {
             throw new OrderException('Get order url failed during order creation, the domain list is: '.implode(', ', $this->_domainList));
         }

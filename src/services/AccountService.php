@@ -159,12 +159,12 @@ class AccountService
             throw new AccountException("Create account failed, the code is: {$code}, the header is: {$header}, the body is: ".print_r($body, TRUE));
         }
 
-        if (!preg_match('/Location:\s*(\S+)/i', $header, $matches))
+        if (!($accountUrl = CommonHelper::getLocationFieldFromHeader($header)))
         {
             throw new AccountException("Parse account url failed, the header is: {$header}");
         }
 
-        $accountInfo = array_merge($body, ['accountUrl' => trim($matches[1])]);
+        $accountInfo = array_merge($body, ['accountUrl' => $accountUrl]);
 
         $this->populate($accountInfo);
 
@@ -226,12 +226,12 @@ class AccountService
             throw new AccountException("Get account url failed, the code is: {$code}, the header is: {$header}, the body is: ".print_r($body, TRUE));
         }
 
-        if (!preg_match('/Location:\s*(\S+)/i', $header, $matches))
+        if (!($accountUrl = CommonHelper::getLocationFieldFromHeader($header)))
         {
             throw new AccountException("Parse account url failed, the header is: {$header}");
         }
 
-        $this->accountUrl = trim($matches[1]);
+        $this->accountUrl = $accountUrl;
 
         return $this->accountUrl;
     }

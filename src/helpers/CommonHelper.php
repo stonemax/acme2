@@ -43,7 +43,7 @@ class CommonHelper
      * @param string $header
      * @return bool|string
      */
-    public static function getLocationFiledFromHeader($header)
+    public static function getLocationFieldFromHeader($header)
     {
         return self::getFieldFromHeader('Location', $header);
     }

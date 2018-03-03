@@ -123,6 +123,29 @@ class CommonHelper
     }
 
     /**
+     * Get common name for csr generation
+     * @param array $domainList
+     * @return mixed
+     */
+    public static function getCommonNameForCSR($domainList)
+    {
+        $domainLevel = [];
+
+        foreach ($domainList as $domain)
+        {
+            $domainLevel[count(explode('.', $domain))][] = $domain;
+        }
+
+        ksort($domainLevel);
+
+        $shortestDomainList = reset($domainLevel);
+
+        sort($shortestDomainList);
+
+        return $shortestDomainList[0];
+    }
+
+    /**
      * Get csr content without comment
      * @param string $csr
      * @return string

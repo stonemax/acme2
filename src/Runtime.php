@@ -100,23 +100,22 @@ class Runtime
 
     /**
      * Get order service instance
-     * @param string $baseDomain
-     * @param array $domainList
+     * @param array $domainInfo
      * @param string $algorithm
      * @param string $notBefore
      * @param string $notAfter
-     * @param bool $isNewOrder
+     * @param bool $renew
      * @return OrderService
      * @throws exceptions\AccountException
      * @throws exceptions\NonceException
      * @throws exceptions\OrderException
      * @throws exceptions\RequestException
      */
-    public function getOrder($baseDomain, $domainList, $algorithm, $notBefore, $notAfter, $isNewOrder)
+    public function getOrder($domainInfo, $algorithm, $notBefore, $notAfter, $renew)
     {
         if (!$this->order)
         {
-            $this->order = new OrderService($baseDomain, $domainList, $algorithm, $notBefore, $notAfter, $isNewOrder);
+            $this->order = new OrderService($domainInfo, $algorithm, $notBefore, $notAfter, $renew);
         }
 
         return $this->order;

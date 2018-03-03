@@ -46,20 +46,19 @@ class Client
 
     /**
      * Get order service instance
-     * @param string $baseDomain
-     * @param array $domainList
+     * @param array $domainInfo
      * @param string $algorithm
      * @param string $notBefore
      * @param string $notAfter
-     * @param bool $isNewOrder
+     * @param bool $renew
      * @return services\OrderService
      * @throws exceptions\AccountException
      * @throws exceptions\NonceException
      * @throws exceptions\OrderException
      * @throws exceptions\RequestException
      */
-    public function getOrder($baseDomain, $domainList, $algorithm, $notBefore = '', $notAfter = '', $isNewOrder = FALSE)
+    public function getOrder($domainInfo, $algorithm, $notBefore = '', $notAfter = '', $renew = FALSE)
     {
-        return self::$runtime->getOrder($baseDomain, $domainList, $algorithm, $notBefore, $notAfter, $isNewOrder);
+        return self::$runtime->getOrder($domainInfo, $algorithm, $notBefore, $notAfter, $renew);
     }
 }

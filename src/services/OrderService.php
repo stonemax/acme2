@@ -72,12 +72,6 @@ class OrderService
     private $_authorizationList;
 
     /**
-     * Base domain name
-     * @var string
-     */
-    private $_baseDomain;
-
-    /**
      * Domain list
      * @var array
      */
@@ -111,7 +105,7 @@ class OrderService
      * Is a new order
      * @var bool
      */
-    private $_isNewOrder;
+    private $_renew;
 
     /**
      * Certificate private key file path
@@ -151,24 +145,22 @@ class OrderService
 
     /**
      * OrderService constructor.
-     * @param string $baseDomain
      * @param array $domainInfo
      * @param string $algorithm
      * @param string $notBefore
      * @param string $notAfter
-     * @param bool $isNewOrder
+     * @param bool $renew
      * @throws OrderException
      * @throws \stonemax\acme2\exceptions\AccountException
      * @throws \stonemax\acme2\exceptions\NonceException
      * @throws \stonemax\acme2\exceptions\RequestException
      */
-    public function __construct($baseDomain, $domainInfo, $algorithm, $notBefore, $notAfter, $isNewOrder = FALSE)
+    public function __construct($domainInfo, $algorithm, $notBefore, $notAfter, $renew = FALSE)
     {
-        $this->_baseDomain = $baseDomain;
         $this->_algorithm = $algorithm;
         $this->_notBefore = $notBefore;
         $this->_notAfter = $notAfter;
-        $this->_isNewOrder = boolval($isNewOrder);
+        $this->_renew = boolval($renew);
 
         foreach ($domainInfo as $challengeType => $domainList)
         {
@@ -226,7 +218,7 @@ class OrderService
             $this->{$propertyName} = $basePath.DIRECTORY_SEPARATOR.$fileName;
         }
 
-        if ($this->_isNewOrder)
+        if ($this->_renew)
         {
             foreach ($pathMap as $propertyName => $fileName)
             {
@@ -580,36 +572,11 @@ class OrderService
 
         $csr = OpenSSLHelper::generateCSR(
             $domainList,
-            $this->generateDNForCSR($domainList),
+            ['commonName' => CommonHelper::getCommonNameForCSR($domainList)],
             $this->getPrivateKey()
         );
 
         file_put_contents($this->_csrPath, $csr);
-    }
-
-    /**
-     * Generate dn info for csr
-     * @param array $domainList
-     * @return array
-     */
-    private function generateDNForCSR($domainList)
-    {
-        if (in_array($this->_baseDomain, $domainList))
-        {
-            $commonName = $this->_baseDomain;
-        }
-        else if (in_array("*.{$this->_baseDomain}", $domainList))
-        {
-            $commonName = "*.{$this->_baseDomain}";
-        }
-        else
-        {
-            $commonName = $domainList[0];
-        }
-
-        return [
-            'commonName' => $commonName,
-        ];
     }
 
     /**

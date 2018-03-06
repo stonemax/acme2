@@ -17,6 +17,24 @@ namespace stonemax\acme2\constants;
 class CommonConstant
 {
     /**
+     * Http Request type: get
+     * @var string
+     */
+    const REQUEST_TYPE_GET = 'GET';
+
+    /**
+     * Http Request type: post
+     * @var string
+     */
+    const REQUEST_TYPE_POST = 'POST';
+
+    /**
+     * Http Request type: head
+     * @var string
+     */
+    const REQUEST_TYPE_HEAD = 'HEAD';
+
+    /**
      * Key pair type: rsa
      * @var int
      */

@@ -7,7 +7,7 @@ stonemax/acme2 当前的版本是 `1.0.0`。
 
 
 ## 2. 先决条件
-由于使用了命名空间、三元运算符简写形式等 PHP 特性，因此使用本工具的最低 PHP 版本要求为 5.4+（含5.4）。但是当您要生成 ECDSA 类型的证书时，需要的 PHP 版本最低为 7.1.0+（含7.1.0）。此外，我们还需要开启 openssl 扩展。
+由于使用了命名空间、三元运算符简写形式等 PHP 特性，因此使用本工具的最低 PHP 版本要求为 5.4.0+（含5.4.0）。但是当您要生成 ECDSA 类型的证书时，需要的 PHP 版本最低为 7.1.0+（含7.1.0）。此外，我们还需要开启 openssl 扩展。
 虽然stonemax/acme2 使用了 composer 作为包管理器，但是仅将其作为文件的自动加载器使用，实际上并未使用任何外部依赖
 
 
@@ -64,7 +64,7 @@ $domainInfo = [
     ],
 ];
 
-$algorithm = CommonConstant::KEY_PAIR_TYPE_RSA;                 // 生成 RSA 类型的证书
+$algorithm = CommonConstant::KEY_PAIR_TYPE_RSA;                 // 生成 RSA 类型的证书，使用 `CommonConstant::KEY_PAIR_TYPE_EC` 生成 ECDSA 证书
 $renew = FALSE;                                                 // 是否重新生成证书，一般用于证书快过期时，用于证书续期（实际上是重新生成了证书）
 
 $order = $client->getOrder($domainInfo, $algorithm, $renew);    // 获取订单实例
@@ -138,12 +138,12 @@ print_r($challenge->getCredential());
 #### 5.3. 通配符域名认证
 ACME2支持通配符证书的生成，但仅能使用 DNS 认证。拿 `*.www.example.com` 举例来说，当进行 DNS 认证时，其实是针对域名 `www.example.com` 进行校验的。下面针对 DNS 认证的各种情况做一个说明。
 
-| 域名              | DNS 记录名                      | 类型 | TTL | DNS 记录值                                  |
-| example.com       | _acme-challenge.example.com     | TXT  | 60  | xQwerUEsL8UVc6tIahwIVY4e8N5MAf1xhyY20AELurk |
-| *.example.com     | _acme-challenge.example.com     | TXT  | 60  | G2dOkzSjW3ohib5doPRDrz5a5l8JB1qU8CxURtzF7aE |
-| www.example.com   | _acme-challenge.www.example.com | TXT  | 60  | x1sc0pIwN5Sbqx0NO0QQeu8LxIfhbM2eTjwdWliYxF1 |
-| *.www.example.com | _acme-challenge.www.example.com | TXT  | 60  | eZ9ViY12gKfdruYHOO7Lu74ICXeQRMDLp5GuHLvPsf7 |
-
+|        域名        |            DNS 记录名            | 类型 | TTL |                 DNS 记录值                  |
+| ------------------ | -------------------------------- | ---- | --- | ------------------------------------------- |
+| example.com        | \_acme-challenge.example.com     | TXT  |  60 | xQwerUEsL8UVc6tIahwIVY4e8N5MAf1xhyY20AELurk |
+| \*.example.com     | \_acme-challenge.example.com     | TXT  |  60 | G2dOkzSjW3ohib5doPRDrz5a5l8JB1qU8CxURtzF7aE |
+| www.example.com    | \_acme-challenge.www.example.com | TXT  |  60 | x1sc0pIwN5Sbqx0NO0QQeu8LxIfhbM2eTjwdWliYxF1 |
+| \*.www.example.com | \_acme-challenge.www.example.com | TXT  |  60 | eZ9ViY12gKfdruYHOO7Lu74ICXeQRMDLp5GuHLvPsf7 |
 
 
 ## 6. 完整例子
@@ -151,7 +151,7 @@ stonemax/acme2 随代码附上了一个完整的例子，位于 [examples/](http
 
 
 ## 7. 感谢
-[yourivw/LEClient](https://github.com/yourivw/LEClient) 项目对本项目有很大帮助，再次表示感谢！
+[yourivw/LEClient](https://github.com/yourivw/LEClient) 项目对本项目有很大帮助，在此表示感谢！
 
 
 ## 8. 许可证

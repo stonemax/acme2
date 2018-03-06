@@ -1,6 +1,6 @@
 # ACME2
 
-stonemax/acme2 is a simple PHP tool to manage TLS certificates with ACME-compliant CAs, it's mainly used with let's Encrypt, support for both ESA and ECDSA certifacates. It will not set challenge file or dns record for you, you can do this jobs manually, or automaticlly with you own code and hooks in stonemax/acme2.
+stonemax/acme2 is a simple PHP tool to manage TLS certificates with ACME-compliant CAs, it's mainly used with let's Encrypt, support for both ESA and ECDSA certifacates. It will not set challenge file or DNS record for you, you can do these jobs manually, or automaticlly with you own code and hooks in stonemax/acme2.
 
 
 ## 1. Current Version
@@ -24,7 +24,7 @@ composer install
 
 
 ## 4. Usage
-The basic methods and its necessary arguments are shown here. An example is supplied in [examples](https://github.com/stonemax/acme2/tree/develop/examples).
+The basic methods and its necessary arguments are shown here. An example is supplied in [examples/](https://github.com/stonemax/acme2/tree/develop/examples).
 
 #### 4.1. Client
 
@@ -37,7 +37,7 @@ $staging = TRUE;                                             // Using stage envi
 $client = new Client($emailList, $storagePath, $staging);    // Initiating a client
 ```
 
-When client instance is initiated, a Let's Encrypt account will be created and the account data will be placed in `$storagePath`.
+After `Client` had been initiated, a Let's Encrypt account will be created and the account data will be placed in `$storagePath`.
 When you reinitialize the client, the accout will not be created again.
 
 #### 4.2. Account
@@ -46,7 +46,7 @@ When you reinitialize the client, the accout will not be created again.
 $account = $client->getAccount();              // Get account service instance
 
 $account->updateAccountContact($emailList);    // Update account contact info with an email list
-$account->updateAccountKey();                  // Regenerate private/public key pair，and use them to replace the old
+$account->updateAccountKey();                  // Regenerate private/public key pair，the old will be replaced by the new
 $account->deactivateAccount();                 // Deactive the account
 ```
 
@@ -84,7 +84,7 @@ $challengeList = $order->getPendingChallengeList();
 foreach ($challengeList as $challenge)
 {
     $challenge->getType();          // Challenge type, http-01 or dns-01
-    $challenge->getCredential();    // challenge detail, http-01 with file name and file content, dns-01 with dns record value
+    $challenge->getCredential();    // Challenge detail, http-01 with file name and file content, dns-01 with dns record value
     $challenge->verify();           // Do verifying operation, this method will loop infinitely until verification passed
 }
 ```
@@ -95,7 +95,7 @@ When generating a certificate, Let's Encrypt need to verify the ownership and va
 In the following, we take `www.example.com` as an example.
 
 #### 5.1. http-01
-As this type, Let's Encrypt will access an specific file under web server to verify domain.
+As this type, Let's Encrypt will access a specific file under web server to verify domain.
 As this time, the `$challenge` info is like bellow.
 
 ```php
@@ -137,13 +137,13 @@ print_r($challenge->getCredential());
 ];
 ```
 
-With the aboved `$challenge` info, you shuoud add a TXT record for domain `www.example.com`, the recoed name should be "_acme-challenge.www.example.com", the record value should be "xQwerUEsL8UVc6tIahwIVY4e8N5MAf1xhyY20AELurk".
+With the aboved `$challenge` info, you shuoud add a TXT record for domain `www.example.com`, the record name should be "_acme-challenge.www.example.com", the record value should be "xQwerUEsL8UVc6tIahwIVY4e8N5MAf1xhyY20AELurk".
 It's worth noting that you should set TTL as short as possible to let the record take effect as soon as possible.
 
 #### 5.3. Wildcard domain verification
 This tool supports generating certificates for wildcard domains.
 A wildcard domain, like `*.www.example.com`, will be verified as `www.example.com`, this means the DNS record name should be `_acme-challenge.www.example.com`.
-Here is a simple summary for dns-01 challenges about domain and record name.
+Here is a simple summary for dns-01 challenges about domain and DNS record.
 
 |       Domain       |         DNS record name          | Type | TTL |       DNS record value(just examples)       |
 | ------------------ | -------------------------------- | ---- | --- | ------------------------------------------- |

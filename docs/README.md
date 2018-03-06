@@ -8,7 +8,7 @@ The current version is `1.0.0`.
 
 
 ## 2. Prerequisites
-This version works with PHP-5.4.0 or higher, if you need to generate ECDSA certificates, PHP version should be 7.1.0 or higher. PHP need openssl extenson enabled in addition.
+This version works with PHP-5.4.0 or higher, if you need to generate ECDSA certificates, PHP version should be 7.1.0 or higher. PHP need curl and openssl extensons enabled in addition.
 Although acme2 uses composer, but composer is just uesd as an autoloader, this porject has no any third party dependencies.
 
 

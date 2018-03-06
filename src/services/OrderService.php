@@ -148,7 +148,7 @@ class OrderService
 
         if ($this->_algorithm == CommonConstant::KEY_PAIR_TYPE_EC && version_compare(PHP_VERSION, '7.1.0') == -1)
         {
-            throw new OrderException("PHP version 7.1 or higher required for generating EC certificates.");
+            throw new OrderException("PHP version 7.1.0 or higher required for generating EC certificates.");
         }
 
         foreach ($domainInfo as $challengeType => $domainList)

@@ -1,7 +1,7 @@
 {
     "name": "stonemax/acme2",
-    "description": "Another PHP client for acme protocal (version 2) implementation, used for generating letsencrypt's free ssl certificate.",
-    "type": "library",
+    "description": "Another PHP client for acme protocal (version 2) implementation, used for generating letsencrypt's free ssl certificates.",
+    "type": "project",
     "license": "MIT",
     "authors": [
         {
@@ -10,5 +10,10 @@
         }
     ],
     "minimum-stability": "stable",
-    "require": {}
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "stonemax\\acme2\\": "src/"
+        }
+    }
 }

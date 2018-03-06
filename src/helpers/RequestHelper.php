@@ -11,6 +11,7 @@
 namespace stonemax\acme2\helpers;
 
 use stonemax\acme2\Client;
+use stonemax\acme2\constants\CommonConstant;
 use stonemax\acme2\exceptions\RequestException;
 
 /**
@@ -27,21 +28,9 @@ class RequestHelper
      */
     public static function get($url)
     {
-        $crlf = "\r\n";
-        $urlMap = self::parseUrl($url);
-
-        $requestData = [
-            "GET {$urlMap['path']}{$urlMap['query']} HTTP/1.1",
-            "Host: {$urlMap['host']}",
-            "Accept: application/json",
-            "User-Agent: ".Client::$runtime->params['software'].'/'.Client::$runtime->params['version'],
-            "Connection: close{$crlf}{$crlf}",
-        ];
-
         return self::run(
-            $urlMap['hostWithSchema'],
-            $urlMap['port'],
-            implode($crlf, $requestData)
+            $url,
+            CommonConstant::REQUEST_TYPE_GET
         );
     }
 
@@ -54,24 +43,10 @@ class RequestHelper
      */
     public static function post($url, $data)
     {
-        $crlf = "\r\n";
-        $urlMap = self::parseUrl($url);
-
-        $requestData = [
-            "POST {$urlMap['path']}{$urlMap['query']} HTTP/1.1",
-            "Host: {$urlMap['host']}",
-            "Accept: application/json",
-            "User-Agent: ".Client::$runtime->params['software'].'/'.Client::$runtime->params['version'],
-            "Connection: close",
-            "Content-Type: application/json",
-            "Content-Length: ".strlen($data).$crlf,
-            $data
-        ];
-
         return self::run(
-            $urlMap['hostWithSchema'],
-            $urlMap['port'],
-            implode($crlf, $requestData)
+            $url,
+            CommonConstant::REQUEST_TYPE_POST,
+            $data
         );
     }
 
@@ -83,79 +58,34 @@ class RequestHelper
      */
     public static function head($url)
     {
-        $crlf = "\r\n";
-        $urlMap = self::parseUrl($url);
-
-        $requestData = [
-            "HEAD {$urlMap['path']}{$urlMap['query']} HTTP/1.1",
-            "Host: {$urlMap['host']}",
-            "Accept: application/json",
-            "User-Agent: ".Client::$runtime->params['software'].'/'.Client::$runtime->params['version'],
-            "Connection: close{$crlf}{$crlf}",
-        ];
-
         return self::run(
-            $urlMap['hostWithSchema'],
-            $urlMap['port'],
-            implode($crlf, $requestData)
+            $url,
+            CommonConstant::REQUEST_TYPE_HEAD
         );
     }
 
     /**
-     * Parse url
-     * @param string $url
-     * @return array
-     */
-    public static function parseUrl($url)
-    {
-        $tmp = parse_url($url);
-
-        $hostWithSchema = $tmp['scheme'] == 'https'
-            ? "ssl://{$tmp['host']}"
-            : "tcp://{$tmp['host']}";
-
-        $port = isset($tmp['port'])
-            ? intval($tmp['port'])
-            : ($tmp['scheme'] == 'https' ? 443 : 80);
-
-        return [
-            'hostWithSchema' => $hostWithSchema,
-            'host' => $tmp['host'],
-            'port' => $port,
-            'path' => isset($tmp['path']) ? $tmp['path'] : '/',
-            'query' => isset($tmp['query']) ? '?'.$tmp['query'] : '',
-        ];
-    }
-
-    /**
      * Make http request
-     * @param string $hostWithSchema
-     * @param integer $port
-     * @param string $requestData
+     * @param string $url
+     * @param string $requestType
+     * @param string|null $data
      * @return array
      * @throws RequestException
      */
-    public static function run($hostWithSchema, $port, $requestData)
+    public static function run($url, $requestType, $data = NULL)
     {
-        $crlf = "\r\n";
-        $response = '';
-        $handler = @fsockopen($hostWithSchema, $port, $errorNumber, $errorString, 30);
+        $handler = self::getHandler($url, $requestType, $data);
 
-        if (!$handler)
+        $response = curl_exec($handler);
+
+        if($errorString = curl_errno($handler))
         {
-            throw new RequestException("Open http sock open failed, the error number is: {$errorNumber}, the error message is: {$errorString}");
+            throw new RequestException("Request to {$url}({$requestType}) failed, the error message is: {$errorString}");
         }
 
-        fwrite($handler, $requestData);
-
-        while (!feof($handler))
-        {
-            $response .= fread($handler, 128);
-        }
-
-        fclose($handler);
-
-        list($header, $body) = explode($crlf.$crlf, $response, 2);
+        $info = curl_getinfo($handler);
+        $header = trim(substr($response, 0, $info['header_size']));
+        $body = trim(substr($response, $info['header_size']));
 
         /* Get replay nonce from this request's header */
         if ($nonce = CommonHelper::getNonceFromResponseHeader($header))
@@ -163,15 +93,62 @@ class RequestHelper
             Client::$runtime->nonce->set($nonce);
         }
 
-        preg_match('/\d{3}/', trim($header), $matches);
-
-        $body = trim($body);
         $bodyDecoded = json_decode(trim($body), TRUE);
 
         return [
-            intval($matches[0]),                             // response http status code
+            intval($info['http_code']),                      // response http status code
             $header,                                         // response http header
             $bodyDecoded !== NULL ? $bodyDecoded : $body,    // response data
         ];
+    }
+
+    /**
+     * Get curl handler
+     * @param string $url
+     * @param string $requestType
+     * @param string|null $data
+     * @return resource
+     * @throws RequestException
+     */
+    public static function getHandler($url, $requestType, $data)
+    {
+        $header = [
+            'Accept: application/json',
+            'Content-Type: application/json',
+            'User-Agent: '.Client::$runtime->params['software'].'/'.Client::$runtime->params['version'],
+        ];
+
+        $handler = curl_init($url);
+
+        curl_setopt($handler, CURLOPT_HTTPHEADER, $header);
+        curl_setopt($handler, CURLOPT_CONNECTTIMEOUT, 30);
+        curl_setopt($handler, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($handler, CURLOPT_SSL_VERIFYHOST, FALSE);
+        curl_setopt($handler, CURLOPT_FOLLOWLOCATION, TRUE);
+        curl_setopt($handler, CURLOPT_HEADER, TRUE);
+        curl_setopt($handler, CURLOPT_RETURNTRANSFER, TRUE);
+
+        switch ($requestType)
+        {
+            case CommonConstant::REQUEST_TYPE_GET:
+                break;
+
+            case CommonConstant::REQUEST_TYPE_POST:
+                curl_setopt($handler, CURLOPT_POST, TRUE);
+                curl_setopt($handler, CURLOPT_POSTFIELDS, $data);
+
+                break;
+
+            case CommonConstant::REQUEST_TYPE_HEAD:
+                curl_setopt($handler, CURLOPT_CUSTOMREQUEST, CommonConstant::REQUEST_TYPE_HEAD);
+                curl_setopt($handler, CURLOPT_NOBODY, TRUE);
+
+                break;
+
+            default:
+                throw new RequestException("Request type is invalid({$requestType})");
+        }
+
+        return $handler;
     }
 }

@@ -65,7 +65,7 @@ class CommonHelper
     }
 
     /**
-     * Check http challenge locally
+     * Check http challenge locally, this challenge must be accomplished via http not https
      * @param string $domain
      * @param string $fileName
      * @param string $fileContent
@@ -73,25 +73,20 @@ class CommonHelper
      */
     public static function checkHttpChallenge($domain, $fileName, $fileContent)
     {
-        $baseUrl = "{$domain}/.well-known/acme-challenge/{$fileName}";
+        $url = "http://{$domain}/.well-known/acme-challenge/{$fileName}";
 
-        foreach (['http', 'https'] as $schema)
+        try
         {
-            $url = "{$schema}://$baseUrl";
+            list(, , $body) = RequestHelper::get($url);
+        }
+        catch (RequestException $e)
+        {
+            return FALSE;
+        }
 
-            try
-            {
-                list(, , $body) = RequestHelper::get($url);
-            }
-            catch (RequestException $e)
-            {
-                continue;
-            }
-
-            if ($body == $fileContent)
-            {
-                return TRUE;
-            }
+        if ($body == $fileContent)
+        {
+            return TRUE;
         }
 
         return FALSE;

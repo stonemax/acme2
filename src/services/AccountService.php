@@ -178,7 +178,7 @@ class AccountService
      * @throws \stonemax\acme2\exceptions\NonceException
      * @throws \stonemax\acme2\exceptions\RequestException
      */
-    public function getAccount()
+    private function getAccount()
     {
         $accountUrl = $this->getAccountUrl();
 

@@ -15,16 +15,16 @@ use stonemax\acme2\constants\CommonConstant;
 
 $domainInfo = [
     CommonConstant::CHALLENGE_TYPE_HTTP => [
-        'abc.test.com'
+        'abc.example.com'
     ],
 
     CommonConstant::CHALLENGE_TYPE_DNS => [
-        '*.www.test.com',
-        'www.test.com',
+        '*.www.example.com',
+        'www.example.com',
     ],
 ];
 
-$client = new Client(['alert@mail.com'], '../data/', TRUE);
+$client = new Client(['alert@example.com'], '../data/', TRUE);
 
 $order = $client->getOrder($domainInfo, CommonConstant::KEY_PAIR_TYPE_RSA);
 // $order = $client->getOrder($domainInfo, CommonConstant::KEY_PAIR_TYPE_RSA, TRUE);    // Renew certificates

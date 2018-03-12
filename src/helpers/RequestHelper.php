@@ -78,7 +78,7 @@ class RequestHelper
 
         $response = curl_exec($handler);
 
-        if($errorString = curl_errno($handler))
+        if ($errorString = curl_errno($handler))
         {
             throw new RequestException("Request to {$url}({$requestType}) failed, the error message is: {$errorString}");
         }

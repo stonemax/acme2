@@ -47,7 +47,8 @@ foreach ($challengeList as $challenge)
         setChallengeFile(
             $credential['identifier'],
             $credential['fileName'],
-            $credential['fileContent']);
+            $credential['fileContent']
+        );
     }
 
     /* dns-01 */

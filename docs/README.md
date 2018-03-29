@@ -54,7 +54,7 @@ $account->deactivateAccount();                 // Deactive the account
 These methods bellow are mainly used for generating certificates.
 
 ```php
-/* Domains and challenges info */
+/* Domains and challenges info for a single certificate with multiple SAN: abc.example.com, *.www.example.com and www.example.com */
 $domainInfo = [
     CommonConstant::CHALLENGE_TYPE_HTTP => [
         'abc.example.com'

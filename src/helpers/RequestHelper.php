@@ -114,7 +114,7 @@ class RequestHelper
     {
         $header = [
             'Accept: application/json',
-            'Content-Type: application/json',
+            'Content-Type: application/jose+json',
             'User-Agent: '.Client::$runtime->params['software'].'/'.Client::$runtime->params['version'],
         ];
 

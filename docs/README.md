@@ -31,7 +31,7 @@ The basic methods and its necessary arguments are shown here. An example is supp
 ```php
 $emailList = ['alert@example.com'];                          // Email list as contact info
 $storagePath = './data';                                     // Account data and certificates files will be stored here
-$staging = TRUE;                                             // Using stage environment or not
+$staging = TRUE;                                             // Using stage environment or not, make sure to empty $storagePath directory after you change from staging/test server to the real one
 
 
 $client = new Client($emailList, $storagePath, $staging);    // Initiating a client

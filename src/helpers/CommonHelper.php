@@ -107,7 +107,7 @@ class CommonHelper
         {
             foreach ($recordList as $record)
             {
-                if ($record['host'] == $host && $record['type'] == 'TXT' && $record['txt'] == $dnsContent)
+                if ($record['type'] == 'TXT' && $record['txt'] == $dnsContent)
                 {
                     return TRUE;
                 }

@@ -119,13 +119,14 @@ class AuthorizationService
     /**
      * Make letsencrypt to verify
      * @param string $type
+     * @param int $timeout
      * @return bool
      * @throws AuthorizationException
      * @throws \stonemax\acme2\exceptions\AccountException
      * @throws \stonemax\acme2\exceptions\NonceException
      * @throws \stonemax\acme2\exceptions\RequestException
      */
-    public function verify($type)
+    public function verify($type, $timeout = 180)
     {
         $challenge = $this->getChallenge($type);
 
@@ -136,9 +137,17 @@ class AuthorizationService
 
         $keyAuthorization = $challenge['token'].'.'.OpenSSLHelper::generateThumbprint();
 
-        while (!$this->verifyLocally($type, $keyAuthorization))
+        $result = false;
+        $endTime = time() + $timeout;
+        while (time() <= $endTime && $result === false)
         {
             sleep(3);
+            $result = $this->verifyLocally($type, $keyAuthorization);
+        }
+
+        if ($result === false)
+        {
+            throw new AuthorizationException("Verification failed, timed out after {$timeout} seconds.");
         }
 
         $jwk = OpenSSLHelper::generateJWSOfKid(
@@ -154,11 +163,16 @@ class AuthorizationService
             throw new AuthorizationException("Send Request to letsencrypt to verify authorization failed, the url is: {$challenge['url']}, the domain is: {$this->identifier['value']}, the code is: {$code}, the header is: {$header}, the body is: ".print_r($body, TRUE));
         }
 
-        while ($this->status == 'pending')
+        $endTime = time() + $timeout;
+        while (time() <= $endTime && $this->status == 'pending')
         {
             sleep(3);
-
             $this->getAuthorization();
+        }
+
+        if ($this->status == 'pending')
+        {
+            throw new AuthorizationException("Verify {$this->domain} failed, timed out after {$timeout} seconds.");
         }
 
         if ($this->status == 'invalid')

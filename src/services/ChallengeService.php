@@ -76,13 +76,14 @@ class ChallengeService
 
     /**
      * Verify
+     * @param int $timeout
      * @return bool
      * @throws \stonemax\acme2\exceptions\AccountException
      * @throws \stonemax\acme2\exceptions\AuthorizationException
      * @throws \stonemax\acme2\exceptions\NonceException
      * @throws \stonemax\acme2\exceptions\RequestException
      */
-    public function verify()
+    public function verify($timeout = 180)
     {
         $orderService = Client::$runtime->order;
 
@@ -91,6 +92,6 @@ class ChallengeService
             return TRUE;
         }
 
-        return $this->_authorication->verify($this->_type);
+        return $this->_authorication->verify($this->_type, $timeout);
     }
 }

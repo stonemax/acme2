@@ -85,7 +85,7 @@ foreach ($challengeList as $challenge)
 {
     $challenge->getType();          // Challenge type, http-01 or dns-01
     $challenge->getCredential();    // Challenge detail, http-01 with file name and file content, dns-01 with dns record value
-    $challenge->verify();           // Do verifying operation, this method will loop infinitely until verification passed
+    $challenge->verify();           // Do verifying operation, this method will timeout after 180 seconds by default
 }
 ```
 

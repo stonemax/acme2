@@ -361,13 +361,14 @@ class OrderService
     /**
      * Get certificate file path info after verifying
      * @param string|null $csr
+     * @param int $timeout
      * @return array
      * @throws OrderException
      * @throws \stonemax\acme2\exceptions\AccountException
      * @throws \stonemax\acme2\exceptions\NonceException
      * @throws \stonemax\acme2\exceptions\RequestException
      */
-    public function getCertificateFile($csr = NULL)
+    public function getCertificateFile($csr = NULL, $timeout = 180)
     {
         if ($this->isAllAuthorizationValid() === FALSE)
         {
@@ -384,11 +385,16 @@ class OrderService
             $this->finalizeOrder(CommonHelper::getCSRWithoutComment($csr));
         }
 
-        while ($this->status != 'valid')
+        $endTime = time() + $timeout;
+        while (time() <= $endTime && $this->status != 'valid')
         {
             sleep(3);
-
             $this->getOrder();
+        }
+
+        if ($this->status != 'valid')
+        {
+            throw new OrderException("Fetch certificate from letsencrypt failed, timed out after {$timeout} seconds.");
         }
 
         list($code, $header, $body) = RequestHelper::get($this->certificate);

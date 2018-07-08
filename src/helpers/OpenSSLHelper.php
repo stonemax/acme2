@@ -99,7 +99,7 @@ class OpenSSLHelper
      * @param string $privateKey
      * @return mixed
      */
-    public static function generateCSR($domainList, $dn, $privateKey)
+    public static function generateCSR($domainList, $dn, $privateKey, $bits = 4096)
     {
         $san = array_map(
             function($domain) {
@@ -116,7 +116,7 @@ class OpenSSLHelper
             HOME = .
             RANDFILE = \$ENV::HOME/.rnd
             [ req ]
-            default_bits = 4096
+            default_bits = ".$bits."
             default_keyfile = privkey.pem
             distinguished_name = req_distinguished_name
             req_extensions = v3_req

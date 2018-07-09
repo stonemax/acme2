@@ -535,13 +535,14 @@ class OrderService
 
     /**
      * Get csr info, if the csr doesn't exist then create it
+     * @param int $bits
      * @return bool|string
      */
-    private function getCSR()
+    public function getCSR($bits = 4096)
     {
         if (!is_file($this->_csrPath))
         {
-            $this->createCSRFile();
+            $this->createCSRFile($bits);
         }
 
         return file_get_contents($this->_csrPath);
@@ -549,8 +550,9 @@ class OrderService
 
     /**
      * Create csr file
+     * @param int $bits
      */
-    private function createCSRFile()
+    private function createCSRFile($bits = 4096)
     {
         $domainList = array_map(
             function($identifier) {
@@ -562,7 +564,8 @@ class OrderService
         $csr = OpenSSLHelper::generateCSR(
             $domainList,
             ['commonName' => CommonHelper::getCommonNameForCSR($domainList)],
-            $this->getPrivateKey()
+            $this->getPrivateKey(),
+            $bits
         );
 
         file_put_contents($this->_csrPath, $csr);

@@ -46,12 +46,12 @@ class OpenSSLHelper
      * @return array
      * @throws OpenSSLException
      */
-    public static function generateKeyPair($type)
+    public static function generateKeyPair($type, $bits = 4096)
     {
         $configMap = [
             CommonConstant::KEY_PAIR_TYPE_RSA => [
                 'private_key_type' => OPENSSL_KEYTYPE_RSA,
-                'private_key_bits' => 4096,
+                'private_key_bits' => $bits,
             ],
 
             CommonConstant::KEY_PAIR_TYPE_EC => [
@@ -138,6 +138,7 @@ class OpenSSLHelper
             [
                 'config' => $opensslConfigFilePath,
                 'digest_alg' => 'sha256',
+                'private_key_bits' => (int)$bits,
             ]
         );
 

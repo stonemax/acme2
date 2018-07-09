@@ -132,19 +132,24 @@ class OrderService
     private $_orderInfoPath;
 
     /**
+     * Key length in bits. Default value is 4096
+     * @var int
+     */
+    private $_bits;
+
+    /**
      * OrderService constructor.
      * @param array $domainInfo
      * @param string $algorithm
      * @param bool $renew
+     * @param int $bits
      * @throws OrderException
-     * @throws \stonemax\acme2\exceptions\AccountException
-     * @throws \stonemax\acme2\exceptions\NonceException
-     * @throws \stonemax\acme2\exceptions\RequestException
      */
-    public function __construct($domainInfo, $algorithm, $renew = FALSE)
+    public function __construct($domainInfo, $algorithm, $renew = FALSE, $bits = 4096)
     {
         $this->_algorithm = $algorithm;
         $this->_renew = boolval($renew);
+        $this->_bits = $bits;
 
         if ($this->_algorithm == CommonConstant::KEY_PAIR_TYPE_EC && version_compare(PHP_VERSION, '7.1.0') == -1)
         {
@@ -374,7 +379,7 @@ class OrderService
             throw new OrderException("There are still some authorizations that are not valid.");
         }
 
-        if ($this->status == 'pending' || $this->status == 'ready')
+        if ($this->status == CommonConstant::ORDER_STATUS_PENDING || $this->status == CommonConstant::ORDER_STATUS_READY)
         {
             if (!$csr)
             {
@@ -384,7 +389,7 @@ class OrderService
             $this->finalizeOrder(CommonHelper::getCSRWithoutComment($csr));
         }
 
-        while ($this->status != 'valid')
+        while ($this->status != CommonConstant::ORDER_STATUS_VALID)
         {
             sleep(3);
 
@@ -433,7 +438,7 @@ class OrderService
      */
     public function revokeCertificate($reason = 0)
     {
-        if ($this->status != 'valid')
+        if ($this->status != CommonConstant::ORDER_STATUS_VALID)
         {
             throw new OrderException("Revoke certificate failed because of invalid status({$this->status})");
         }
@@ -488,7 +493,7 @@ class OrderService
      */
     public function isOrderFinalized()
     {
-        return ($this->status == 'processing' || $this->status == 'valid');
+        return ($this->status == CommonConstant::ORDER_STATUS_PROCESSING || $this->status == CommonConstant::ORDER_STATUS_VALID);
     }
 
     /**
@@ -535,14 +540,13 @@ class OrderService
 
     /**
      * Get csr info, if the csr doesn't exist then create it
-     * @param int $bits
      * @return bool|string
      */
-    public function getCSR($bits = 4096)
+    public function getCSR()
     {
         if (!is_file($this->_csrPath))
         {
-            $this->createCSRFile($bits);
+            $this->createCSRFile();
         }
 
         return file_get_contents($this->_csrPath);
@@ -550,9 +554,8 @@ class OrderService
 
     /**
      * Create csr file
-     * @param int $bits
      */
-    private function createCSRFile($bits = 4096)
+    private function createCSRFile()
     {
         $domainList = array_map(
             function($identifier) {
@@ -565,7 +568,7 @@ class OrderService
             $domainList,
             ['commonName' => CommonHelper::getCommonNameForCSR($domainList)],
             $this->getPrivateKey(),
-            $bits
+            $this->_bits
         );
 
         file_put_contents($this->_csrPath, $csr);
@@ -594,7 +597,7 @@ class OrderService
      */
     private function createKeyPairFile()
     {
-        $keyPair = OpenSSLHelper::generateKeyPair($this->_algorithm);
+        $keyPair = OpenSSLHelper::generateKeyPair($this->_algorithm, $this->_bits);
 
         $result = file_put_contents($this->_privateKeyPath, $keyPair['privateKey'])
             && file_put_contents($this->_publicKeyPath, $keyPair['publicKey']);

@@ -109,11 +109,11 @@ class Runtime
      * @throws exceptions\OrderException
      * @throws exceptions\RequestException
      */
-    public function getOrder($domainInfo, $algorithm, $renew)
+    public function getOrder($domainInfo, $algorithm, $renew, $bits = 4096)
     {
         if (!$this->order)
         {
-            $this->order = new OrderService($domainInfo, $algorithm, $renew);
+            $this->order = new OrderService($domainInfo, $algorithm, $renew, $bits);
         }
 
         return $this->order;

@@ -57,4 +57,28 @@ class CommonConstant
      * @var int
      */
     const CHALLENGE_TYPE_DNS = 'dns-01';
+
+    /**
+     * Order status: pending
+     * @var string
+     */
+    const ORDER_STATUS_PENDING = 'pending';
+
+    /**
+     * Order status: ready
+     * @var string
+     */
+    const ORDER_STATUS_READY = 'ready';
+
+    /**
+     * Order status: valid
+     * @var string
+     */
+    const ORDER_STATUS_VALID = 'valid';
+
+    /**
+     * Order status: processing
+     * @var string
+     */
+    const ORDER_STATUS_PROCESSING = 'processing';
 }

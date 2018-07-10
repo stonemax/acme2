@@ -55,8 +55,8 @@ class Client
      * @throws exceptions\OrderException
      * @throws exceptions\RequestException
      */
-    public function getOrder($domainInfo, $algorithm, $renew = FALSE)
+    public function getOrder($domainInfo, $algorithm, $renew = FALSE, $bits = 4096)
     {
-        return self::$runtime->getOrder($domainInfo, $algorithm, $renew);
+        return self::$runtime->getOrder($domainInfo, $algorithm, $renew, $bits);
     }
 }

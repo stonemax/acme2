@@ -34,7 +34,7 @@ class ChallengeService
      * Authorization inntance
      * @var \stonemax\acme2\services\AuthorizationService
      */
-    private $_authorication;
+    private $_authorization;
 
     /**
      * ChallengeService constructor.
@@ -44,7 +44,7 @@ class ChallengeService
     public function __construct($type, $authorization)
     {
         $this->_type = $type;
-        $this->_authorication = $authorization;
+        $this->_authorization = $authorization;
     }
 
     /**
@@ -91,6 +91,6 @@ class ChallengeService
             return TRUE;
         }
 
-        return $this->_authorication->verify($this->_type);
+        return $this->_authorization->verify($this->_type);
     }
 }

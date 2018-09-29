@@ -30,6 +30,7 @@ class Client
      * @param string|StorageProvider $storageProvider
      * @param bool $staging
      * @throws exceptions\StorageException
+     * @throws exceptions\RuntimeException
      */
     public function __construct($emailList, $storageProvider, $staging = FALSE)
     {

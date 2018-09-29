@@ -10,6 +10,7 @@
 
 namespace stonemax\acme2;
 
+use stonemax\acme2\exceptions\RuntimeException;
 use stonemax\acme2\services\AccountService;
 use stonemax\acme2\services\EndpointService;
 use stonemax\acme2\services\NonceService;
@@ -77,14 +78,19 @@ class Runtime
      * @param string|StorageProvider $storageProvider
      * @param bool $staging
      * @throws exceptions\StorageException
+     * @throws RuntimeException
      */
     public function __construct($emailList, $storageProvider, $staging = FALSE)
     {
         $this->emailList = array_filter(array_unique($emailList));
         if(is_string($storageProvider)) {
-            $storageProvider = new FileSystemStorageProvider($storageProvider); // Convert fs path to provider
+            $storageProvider = rtrim(trim($storageProvider), '/\\');
+            $this->storageProvider = new FileSystemStorageProvider($storageProvider); // Convert fs path to provider
+        } else if ($storageProvider instanceof StorageProvider) {
+            $this->storageProvider = $storageProvider;
+        } else {
+            throw new RuntimeException("Invalid storage provider passed. Must either be fs path or an actual StorageProvider");
         }
-        $this->storageProvider = rtrim(trim($storageProvider), '/\\');
         $this->staging = boolval($staging);
 
         sort($this->emailList);

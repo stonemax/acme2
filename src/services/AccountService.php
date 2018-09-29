@@ -78,7 +78,7 @@ class AccountService
     /**
      * @var StorageProvider
      */
-    private $storageProvider;
+    private $_storageProvider;
 
     /**
      * AccountService constructor.
@@ -86,7 +86,7 @@ class AccountService
      */
     public function __construct($storageProvider)
     {
-        $this->storageProvider = $storageProvider;
+        $this->_storageProvider = $storageProvider;
     }
 
     /**
@@ -98,16 +98,16 @@ class AccountService
      */
     public function init()
     {
-        if ($this->storageProvider->getAccountDataFileExists(AccountService::PUBLIC_KEY_PATH)
-            && $this->storageProvider->getAccountDataFileExists(AccountService::PRIVATE_KEY_PATH))
+        if ($this->_storageProvider->getAccountDataFileExists(AccountService::PUBLIC_KEY_PATH)
+            && $this->_storageProvider->getAccountDataFileExists(AccountService::PRIVATE_KEY_PATH))
         {
             $this->getAccount();
 
             return;
         }
 
-        $this->storageProvider->deleteAccountDataFile(AccountService::PRIVATE_KEY_PATH);
-        $this->storageProvider->deleteAccountDataFile(AccountService::PUBLIC_KEY_PATH);
+        $this->_storageProvider->deleteAccountDataFile(AccountService::PRIVATE_KEY_PATH);
+        $this->_storageProvider->deleteAccountDataFile(AccountService::PUBLIC_KEY_PATH);
 
         $this->createAccount();
     }
@@ -334,8 +334,8 @@ class AccountService
 
         $this->populate($body);
 
-        $this->storageProvider->deleteAccountDataFile(AccountService::PRIVATE_KEY_PATH);
-        $this->storageProvider->deleteAccountDataFile(AccountService::PUBLIC_KEY_PATH);
+        $this->_storageProvider->deleteAccountDataFile(AccountService::PRIVATE_KEY_PATH);
+        $this->_storageProvider->deleteAccountDataFile(AccountService::PUBLIC_KEY_PATH);
 
         return array_merge($body, ['accountUrl' => $this->getAccountUrl()]);
     }
@@ -346,7 +346,7 @@ class AccountService
      */
     public function getPrivateKey()
     {
-        return $this->storageProvider->getAccountDataFile(AccountService::PRIVATE_KEY_PATH);
+        return $this->_storageProvider->getAccountDataFile(AccountService::PRIVATE_KEY_PATH);
     }
 
     /**
@@ -359,8 +359,8 @@ class AccountService
     {
         $keyPair = $keyPair ?: OpenSSLHelper::generateRSAKeyPair();
 
-        $result = $this->storageProvider->saveAccountDataFile(AccountService::PRIVATE_KEY_PATH, $keyPair["privateKey"])
-            && $this->storageProvider->saveAccountDataFile(AccountService::PUBLIC_KEY_PATH, $keyPair["publicKey"]);
+        $result = $this->_storageProvider->saveAccountDataFile(AccountService::PRIVATE_KEY_PATH, $keyPair["privateKey"])
+            && $this->_storageProvider->saveAccountDataFile(AccountService::PUBLIC_KEY_PATH, $keyPair["publicKey"]);
 
         if ($result === FALSE)
         {

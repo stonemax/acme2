@@ -83,13 +83,18 @@ class Runtime
     public function __construct($emailList, $storageProvider, $staging = FALSE)
     {
         $this->emailList = array_filter(array_unique($emailList));
-        if(is_string($storageProvider)) {
+        if(is_string($storageProvider)) // Convert fs path to provider
+        {
             $storageProvider = rtrim(trim($storageProvider), '/\\');
-            $this->storageProvider = new FileSystemStorageProvider($storageProvider); // Convert fs path to provider
-        } else if ($storageProvider instanceof StorageProvider) {
+            $this->storageProvider = new FileSystemStorageProvider($storageProvider);
+        }
+        else if ($storageProvider instanceof StorageProvider)
+        {
             $this->storageProvider = $storageProvider;
-        } else {
-            throw new RuntimeException("Invalid storage provider passed. Must either be fs path or an actual StorageProvider");
+        }
+        else
+        {
+            throw new RuntimeException("Invalid storage provider passed. Must either be a file system path or an actual StorageProvider");
         }
         $this->staging = boolval($staging);
 

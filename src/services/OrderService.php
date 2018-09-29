@@ -410,7 +410,7 @@ class OrderService
 
         if (!$this->_storageProvider->getDomainDataFileExists($this->_storagePath, $this->_storageAlgorithm, OrderService::CERTIFICATE_PATH))
         {
-            throw new OrderException("Revoke certificate failed because of certicate file missing({".OrderService::CERTIFICATE_PATH."})");
+            throw new OrderException("Revoke certificate failed because of certicate file missing(".OrderService::CERTIFICATE_PATH.")");
         }
 
         $certificate = CommonHelper::getCertificateWithoutComment($this->_storageProvider->getDomainDataFile($this->_storagePath, $this->_storageAlgorithm, OrderService::CERTIFICATE_PATH));
@@ -569,7 +569,7 @@ class OrderService
 
         if ($result === FALSE)
         {
-            throw new OrderException('Create order key pair files failed, the domain list is: '.implode(', ', $this->_domainList).", the private key path is: {".OrderService::PRIVATE_KEY_PATH."}, the public key path is: {".OrderService::PUBLIC_KEY_PATH."}");
+            throw new OrderException('Create order key pair files failed, the domain list is: '.implode(', ', $this->_domainList).", the private key path is: ".OrderService::PRIVATE_KEY_PATH.", the public key path is: ".OrderService::PUBLIC_KEY_PATH);
         }
     }
 

@@ -364,7 +364,7 @@ class AccountService
 
         if ($result === FALSE)
         {
-            throw new AccountException("Create account key pair files failed, the private key path is: {".AccountService::PRIVATE_KEY_PATH."}, the public key path is: {".AccountService::PUBLIC_KEY_PATH."}");
+            throw new AccountException("Create account key pair files failed, the private key path is: ".AccountService::PRIVATE_KEY_PATH.", the public key path is: ".AccountService::PUBLIC_KEY_PATH);
         }
     }
 

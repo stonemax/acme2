@@ -17,7 +17,8 @@ class FileSystemStorageProvider extends StorageProvider
      * @param $baseDir
      * @throws StorageException
      */
-    public function __construct($baseDir) {
+    public function __construct($baseDir)
+    {
         $this->baseDir = $baseDir;
         if (
             !is_dir($baseDir) && (
@@ -34,7 +35,8 @@ class FileSystemStorageProvider extends StorageProvider
      * @param $fileName
      * @return mixed
      */
-    public function getAccountDataFileExists($fileName) {
+    public function getAccountDataFileExists($fileName)
+    {
         return is_file($this->baseDir . FileSystemStorageProvider::ACCOUNT_DIR . DIRECTORY_SEPARATOR . $fileName);
     }
 
@@ -42,7 +44,8 @@ class FileSystemStorageProvider extends StorageProvider
      * @param string $fileName
      * @return string Data in file
      */
-    public function getAccountDataFile($fileName) {
+    public function getAccountDataFile($fileName)
+    {
         return file_get_contents($this->baseDir . FileSystemStorageProvider::ACCOUNT_DIR . DIRECTORY_SEPARATOR . $fileName);
     }
 
@@ -51,7 +54,8 @@ class FileSystemStorageProvider extends StorageProvider
      * @param $content
      * @return bool
      */
-    public function saveAccountDataFile($fileName, $content) {
+    public function saveAccountDataFile($fileName, $content)
+    {
         return file_put_contents($this->baseDir . FileSystemStorageProvider::ACCOUNT_DIR . DIRECTORY_SEPARATOR . $fileName, $content);
     }
 
@@ -59,11 +63,13 @@ class FileSystemStorageProvider extends StorageProvider
      * @param $fileName
      * @return bool
      */
-    public function deleteAccountDataFile($fileName) {
+    public function deleteAccountDataFile($fileName)
+    {
         return @unlink($this->baseDir . DIRECTORY_SEPARATOR . $fileName);
     }
 
-    private function makeDomainAlgoDir($domain, $algo) {
+    private function makeDomainAlgoDir($domain, $algo)
+    {
         $dir = $this->baseDir . FileSystemStorageProvider::DOMAIN_DIR . DIRECTORY_SEPARATOR . $domain . DIRECTORY_SEPARATOR . $algo;
         if (!is_dir($dir) && !mkdir($dir, 0755, TRUE)) {
             throw new StorageException("create directory({$dir}) failed, please check the permission.");
@@ -77,7 +83,8 @@ class FileSystemStorageProvider extends StorageProvider
      * @param $fileName
      * @return mixed
      */
-    public function getDomainDataFileExists($domain, $algo, $fileName) {
+    public function getDomainDataFileExists($domain, $algo, $fileName)
+    {
         return is_file($this->makeDomainAlgoDir($domain, $algo) . DIRECTORY_SEPARATOR . $fileName);
     }
 
@@ -87,7 +94,8 @@ class FileSystemStorageProvider extends StorageProvider
      * @param string $fileName
      * @return string Data in file
      */
-    public function getDomainDataFile($domain, $algo, $fileName) {
+    public function getDomainDataFile($domain, $algo, $fileName)
+    {
         return file_get_contents($this->makeDomainAlgoDir($domain, $algo) . DIRECTORY_SEPARATOR . $fileName);
     }
 
@@ -98,7 +106,8 @@ class FileSystemStorageProvider extends StorageProvider
      * @param $content
      * @return bool
      */
-    public function saveDomainDataFile($domain, $algo, $fileName, $content) {
+    public function saveDomainDataFile($domain, $algo, $fileName, $content)
+    {
         return file_put_contents($this->makeDomainAlgoDir($domain, $algo) . DIRECTORY_SEPARATOR . $fileName, $content);
     }
 
@@ -108,7 +117,8 @@ class FileSystemStorageProvider extends StorageProvider
      * @param $fileName
      * @return bool
      */
-    public function deleteDomainDataFile($domain, $algo, $fileName) {
+    public function deleteDomainDataFile($domain, $algo, $fileName)
+    {
         return @unlink($this->makeDomainAlgoDir($domain, $algo) . DIRECTORY_SEPARATOR . $fileName);
     }
 }

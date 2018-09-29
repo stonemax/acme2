@@ -32,6 +32,14 @@ class FileSystemStorageProvider extends StorageProvider
     }
 
     /**
+     * Exposed for migration utils
+     * @return mixed
+     */
+    public function getBaseDir() {
+        return $this->baseDir;
+    }
+
+    /**
      * @param $fileName
      * @return mixed
      */

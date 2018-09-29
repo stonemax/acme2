@@ -13,9 +13,11 @@ namespace stonemax\acme2\services;
 use stonemax\acme2\Client;
 use stonemax\acme2\constants\CommonConstant;
 use stonemax\acme2\exceptions\OrderException;
+use stonemax\acme2\exceptions\StorageException;
 use stonemax\acme2\helpers\CommonHelper;
 use stonemax\acme2\helpers\OpenSSLHelper;
 use stonemax\acme2\helpers\RequestHelper;
+use stonemax\acme2\storage\FileSystemStorageProvider;
 use stonemax\acme2\storage\StorageProvider;
 
 /**
@@ -334,6 +336,7 @@ class OrderService
      * @throws \stonemax\acme2\exceptions\AccountException
      * @throws \stonemax\acme2\exceptions\NonceException
      * @throws \stonemax\acme2\exceptions\RequestException
+     * @deprecated Use {@link OrderService::getFile($file)} to actually get the final files. Migration in place for filesystem provider only.
      */
     public function getCertificateFile($csr = NULL)
     {
@@ -380,16 +383,37 @@ class OrderService
             'validToTime' => date('Y-m-d H:i:s', $certificateInfo['validTo_time_t']),
         ]);
 
-        /** @noinspection PhpUndefinedFieldInspection */
-        return [
-            //TODO Decide how to handle this....
-            'privateKey' => realpath($this->_privateKeyPath),
-            'publicKey' => realpath($this->_publicKeyPath),
-            'certificate' => realpath($this->_certificatePath),
-            'certificateFullChained' => realpath($this->_certificateFullChainedPath),
+        $r = [
             'validFromTimestamp' => $certificateInfo['validFrom_time_t'],
             'validToTimestamp' => $certificateInfo['validTo_time_t'],
         ];
+
+        if($this->_storageProvider instanceof FileSystemStorageProvider)
+        {
+            $base = $this->_storageProvider->getBaseDir().FileSystemStorageProvider::DOMAIN_DIR . DIRECTORY_SEPARATOR . $this->_storagePath . DIRECTORY_SEPARATOR . $this->_storageAlgorithm;
+            $r = array_merge($r, [
+                'privateKey' => realpath($base . DIRECTORY_SEPARATOR . OrderService::PRIVATE_KEY_PATH),
+                'publicKey' => realpath($base . DIRECTORY_SEPARATOR . OrderService::PUBLIC_KEY_PATH),
+                'certificate' => realpath($base . DIRECTORY_SEPARATOR . OrderService::CERTIFICATE_PATH),
+                'certificateFullChained' => realpath($base . DIRECTORY_SEPARATOR . OrderService::CERTIFICATE_FULL_CHAIN_PATH),
+            ]);
+        }
+
+        return $r;
+    }
+
+    /**
+     * Get file contents for domain
+     * @param $file
+     * @return string
+     * @throws StorageException
+     */
+    public function getFile($file) {
+        if(!$this->_storageProvider->getDomainDataFileExists($this->_storagePath, $this->_storageAlgorithm, $file))
+        {
+            throw new StorageException("{$file} does not exist!");
+        }
+        return $this->_storageProvider->getDomainDataFile($this->_storagePath, $this->_storageAlgorithm, $file);
     }
 
     /**

@@ -181,6 +181,7 @@ class CommonHelper
      */
     public static function extractCertificate($certificateFromServer)
     {
+        /** @noinspection PhpUnusedLocalVariableInspection */
         $certificate = '';
         $certificateFullChained = '';
         $pattern = '/-----BEGIN\sCERTIFICATE-----(.*?)-----END\sCERTIFICATE-----/is';

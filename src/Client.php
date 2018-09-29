@@ -10,6 +10,8 @@
 
 namespace stonemax\acme2;
 
+use stonemax\acme2\storage\StorageProvider;
+
 /**
  * Class Client
  * @package stonemax\acme2
@@ -25,12 +27,13 @@ class Client
     /**
      * Client constructor.
      * @param array $emailList
-     * @param string $storagePath
+     * @param string|StorageProvider $storageProvider
      * @param bool $staging
+     * @throws exceptions\StorageException
      */
-    public function __construct($emailList, $storagePath, $staging = FALSE)
+    public function __construct($emailList, $storageProvider, $staging = FALSE)
     {
-        self::$runtime = new Runtime($emailList, $storagePath, $staging);
+        self::$runtime = new Runtime($emailList, $storageProvider, $staging);
 
         self::$runtime->init();
     }

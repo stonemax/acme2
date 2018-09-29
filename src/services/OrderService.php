@@ -16,6 +16,7 @@ use stonemax\acme2\exceptions\OrderException;
 use stonemax\acme2\helpers\CommonHelper;
 use stonemax\acme2\helpers\OpenSSLHelper;
 use stonemax\acme2\helpers\RequestHelper;
+use stonemax\acme2\storage\StorageProvider;
 
 /**
  * Class OrderService
@@ -23,6 +24,14 @@ use stonemax\acme2\helpers\RequestHelper;
  */
 class OrderService
 {
+
+    const PRIVATE_KEY_PATH = "private.pem";
+    const PUBLIC_KEY_PATH = "public.pem";
+    const CSR_PATH = "certificate.csr";
+    const CERTIFICATE_PATH = "certificate.crt";
+    const CERTIFICATE_FULL_CHAIN_PATH = "certificate-fullchained.crt";
+    const ORDER_INFO_PATH = "ORDER";
+
     /**
      * Order status: pending, processing, valid, invalid
      * @var string
@@ -96,55 +105,30 @@ class OrderService
     private $_renew;
 
     /**
-     * Certificate private key file path
-     * @var string
+     * @var StorageProvider
      */
-    private $_privateKeyPath;
+    private $_storageProvider;
 
-    /**
-     * Certificate public key file path
-     * @var string
-     */
-    private $_publicKeyPath;
-
-    /**
-     * Certificate csr file storage path
-     * @var string
-     */
-    private $_csrPath;
-
-    /**
-     * Certificate storage file path
-     * @var string
-     */
-    private $_certificatePath;
-
-    /**
-     * Certificate full-chained file storage path
-     * @var string
-     */
-    private $_certificateFullChainedPath;
-
-    /**
-     * Order info file storage path
-     * @var string
-     */
-    private $_orderInfoPath;
+    private $_storagePath;
+    private $_storageAlgorithm;
 
     /**
      * OrderService constructor.
      * @param array $domainInfo
      * @param string $algorithm
      * @param bool $renew
+     * @param StorageProvider $storageProvider
      * @throws OrderException
      * @throws \stonemax\acme2\exceptions\AccountException
      * @throws \stonemax\acme2\exceptions\NonceException
      * @throws \stonemax\acme2\exceptions\RequestException
      */
-    public function __construct($domainInfo, $algorithm, $renew = FALSE)
+    public function __construct($storageProvider, $domainInfo, $algorithm, $renew = FALSE)
     {
         $this->_algorithm = $algorithm;
         $this->_renew = boolval($renew);
+
+        $this->_storageProvider = $storageProvider;
 
         if ($this->_algorithm == CommonConstant::KEY_PAIR_TYPE_EC && version_compare(PHP_VERSION, '7.1.0') == -1)
         {
@@ -178,49 +162,33 @@ class OrderService
      */
     public function init()
     {
-        $flag = substr(md5(implode(',', $this->_domainList)), 11, 8);
+        $this->_storagePath = substr(md5(implode(',', $this->_domainList)), 11, 8);
 
         $algorithmNameMap = [
             CommonConstant::KEY_PAIR_TYPE_RSA => 'rsa',
             CommonConstant::KEY_PAIR_TYPE_EC => 'ec',
         ];
 
-        $algorithmName = $algorithmNameMap[$this->_algorithm];
-        $basePath = Client::$runtime->storagePath.DIRECTORY_SEPARATOR.$flag.DIRECTORY_SEPARATOR.$algorithmName;
-
-        if (!is_dir($basePath))
-        {
-            mkdir($basePath, 0755, TRUE);
-        }
-
-        $pathMap = [
-            '_privateKeyPath' => 'private.pem',
-            '_publicKeyPath' => 'public.pem',
-            '_csrPath' => 'certificate.csr',
-            '_certificatePath' => 'certificate.crt',
-            '_certificateFullChainedPath' => 'certificate-fullchained.crt',
-            '_orderInfoPath' => 'ORDER',
-        ];
-
-        foreach ($pathMap as $propertyName => $fileName)
-        {
-            $this->{$propertyName} = $basePath.DIRECTORY_SEPARATOR.$fileName;
-        }
+        $this->_storageAlgorithm = $algorithmNameMap[$this->_algorithm];
 
         if ($this->_renew)
         {
-            foreach ($pathMap as $propertyName => $fileName)
+            foreach ([
+                        OrderService::PRIVATE_KEY_PATH,
+                        OrderService::PUBLIC_KEY_PATH,
+                        OrderService::CSR_PATH,
+                        OrderService::CERTIFICATE_PATH,
+                        OrderService::CERTIFICATE_FULL_CHAIN_PATH,
+                        OrderService::ORDER_INFO_PATH
+                     ] as $fileName)
             {
-                @unlink($basePath.DIRECTORY_SEPARATOR.$fileName);
+                $this->_storageProvider->deleteDomainDataFile($this->_storagePath, $this->_storageAlgorithm, $fileName);
             }
         }
 
-        is_file($this->_orderInfoPath) ? $this->getOrder() : $this->createOrder();
+        $this->_storageProvider->getDomainDataFileExists($this->_storagePath, $this->_storageAlgorithm, OrderService::ORDER_INFO_PATH) ? $this->getOrder() : $this->createOrder();
 
-        file_put_contents(
-            Client::$runtime->storagePath.DIRECTORY_SEPARATOR.$flag.DIRECTORY_SEPARATOR.'DOMAIN',
-            implode("\r\n", $this->_domainList)
-        );
+        $this->_storageProvider->saveDomainDataFile($this->_storagePath, $this->_storageAlgorithm, 'DOMAIN', implode("\r\n", $this->_domainList));
     }
 
     /**
@@ -400,8 +368,8 @@ class OrderService
 
         $certificateMap = CommonHelper::extractCertificate($body);
 
-        file_put_contents($this->_certificatePath, $certificateMap['certificate']);
-        file_put_contents($this->_certificateFullChainedPath, $certificateMap['certificateFullChained']);
+        $this->_storageProvider->saveDomainDataFile($this->_storagePath, $this->_storageAlgorithm, OrderService::CERTIFICATE_PATH, $certificateMap['certificate']);
+        $this->_storageProvider->saveDomainDataFile($this->_storagePath, $this->_storageAlgorithm, OrderService::CERTIFICATE_FULL_CHAIN_PATH, $certificateMap['certificateFullChained']);
 
         $certificateInfo = openssl_x509_parse($certificateMap['certificate']);
 
@@ -412,7 +380,9 @@ class OrderService
             'validToTime' => date('Y-m-d H:i:s', $certificateInfo['validTo_time_t']),
         ]);
 
+        /** @noinspection PhpUndefinedFieldInspection */
         return [
+            //TODO Decide how to handle this....
             'privateKey' => realpath($this->_privateKeyPath),
             'publicKey' => realpath($this->_publicKeyPath),
             'certificate' => realpath($this->_certificatePath),
@@ -438,12 +408,12 @@ class OrderService
             throw new OrderException("Revoke certificate failed because of invalid status({$this->status})");
         }
 
-        if (!is_file($this->_certificatePath))
+        if (!$this->_storageProvider->getDomainDataFileExists($this->_storagePath, $this->_storageAlgorithm, OrderService::CERTIFICATE_PATH))
         {
-            throw new OrderException("Revoke certificate failed because of certicate file missing({$this->_certificatePath})");
+            throw new OrderException("Revoke certificate failed because of certicate file missing({".OrderService::CERTIFICATE_PATH."})");
         }
 
-        $certificate = CommonHelper::getCertificateWithoutComment(file_get_contents($this->_certificatePath));
+        $certificate = CommonHelper::getCertificateWithoutComment($this->_storageProvider->getDomainDataFile($this->_storagePath, $this->_storageAlgorithm, OrderService::CERTIFICATE_PATH));
         $certificate = trim(CommonHelper::base64UrlSafeEncode(base64_decode($certificate)));
 
         $jws = OpenSSLHelper::generateJWSOfJWK(
@@ -539,12 +509,12 @@ class OrderService
      */
     private function getCSR()
     {
-        if (!is_file($this->_csrPath))
+        if (!$this->_storageProvider->getDomainDataFileExists($this->_storagePath, $this->_storageAlgorithm, OrderService::CSR_PATH))
         {
             $this->createCSRFile();
         }
 
-        return file_get_contents($this->_csrPath);
+        return $this->_storageProvider->getDomainDataFile($this->_storagePath, $this->_storageAlgorithm, OrderService::CSR_PATH);
     }
 
     /**
@@ -565,7 +535,7 @@ class OrderService
             $this->getPrivateKey()
         );
 
-        file_put_contents($this->_csrPath, $csr);
+        $this->_storageProvider->saveDomainDataFile($this->_storagePath, $this->_storageAlgorithm, OrderService::CSR_PATH, $csr);
     }
 
     /**
@@ -576,12 +546,13 @@ class OrderService
      */
     private function getPrivateKey()
     {
-        if (!is_file($this->_privateKeyPath) || !is_file($this->_publicKeyPath))
+        if (!$this->_storageProvider->getDomainDataFileExists($this->_storagePath, $this->_storageAlgorithm, OrderService::PRIVATE_KEY_PATH)
+            || !$this->_storageProvider->getDomainDataFileExists($this->_storagePath, $this->_storageAlgorithm, OrderService::PUBLIC_KEY_PATH))
         {
             $this->createKeyPairFile();
         }
 
-        return file_get_contents($this->_privateKeyPath);
+        return $this->_storageProvider->getDomainDataFile($this->_storagePath, $this->_storageAlgorithm, OrderService::PRIVATE_KEY_PATH);
     }
 
     /**
@@ -593,12 +564,12 @@ class OrderService
     {
         $keyPair = OpenSSLHelper::generateKeyPair($this->_algorithm);
 
-        $result = file_put_contents($this->_privateKeyPath, $keyPair['privateKey'])
-            && file_put_contents($this->_publicKeyPath, $keyPair['publicKey']);
+        $result = $this->_storageProvider->saveDomainDataFile($this->_storagePath, $this->_storageAlgorithm, OrderService::PRIVATE_KEY_PATH, $keyPair['privateKey'])
+            && $this->_storageProvider->saveDomainDataFile($this->_storagePath, $this->_storageAlgorithm, OrderService::PUBLIC_KEY_PATH, $keyPair['publicKey']);
 
         if ($result === FALSE)
         {
-            throw new OrderException('Create order key pair files failed, the domain list is: '.implode(', ', $this->_domainList).", the private key path is: {$this->_privateKeyPath}, the public key path is: {$this->_publicKeyPath}");
+            throw new OrderException('Create order key pair files failed, the domain list is: '.implode(', ', $this->_domainList).", the private key path is: {".OrderService::PRIVATE_KEY_PATH."}, the public key path is: {".OrderService::PUBLIC_KEY_PATH."}");
         }
     }
 
@@ -610,9 +581,9 @@ class OrderService
     {
         $orderInfo = [];
 
-        if (is_file($this->_orderInfoPath))
+        if ($this->_storageProvider->getDomainDataFileExists($this->_storagePath, $this->_storageAlgorithm, OrderService::ORDER_INFO_PATH))
         {
-            $orderInfo = json_decode(file_get_contents($this->_orderInfoPath), TRUE);
+            $orderInfo = json_decode($this->_storageProvider->getDomainDataFile($this->_storagePath, $this->_storageAlgorithm, OrderService::ORDER_INFO_PATH), TRUE);
         }
 
         return $orderInfo ?: [];
@@ -627,7 +598,7 @@ class OrderService
     {
         $orderInfo = array_merge($this->getOrderInfoFromCache(), $orderInfo);
 
-        return file_put_contents($this->_orderInfoPath, json_encode($orderInfo));
+        return $this->_storageProvider->saveDomainDataFile($this->_storagePath, $this->_storageAlgorithm, OrderService::ORDER_INFO_PATH, json_encode($orderInfo));
     }
 
     /**

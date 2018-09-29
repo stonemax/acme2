@@ -14,6 +14,8 @@ use stonemax\acme2\services\AccountService;
 use stonemax\acme2\services\EndpointService;
 use stonemax\acme2\services\NonceService;
 use stonemax\acme2\services\OrderService;
+use stonemax\acme2\storage\FileSystemStorageProvider;
+use stonemax\acme2\storage\StorageProvider;
 
 /**
  * Class Runtime
@@ -29,9 +31,9 @@ class Runtime
 
     /**
      * Storage path for certificate keys, public/private key pair and so on
-     * @var string
+     * @var StorageProvider
      */
-    public $storagePath;
+    public $storageProvider;
 
     /**
      * If staging status
@@ -72,13 +74,17 @@ class Runtime
     /**
      * Runtime constructor.
      * @param array $emailList
-     * @param string $storagePath
+     * @param string|StorageProvider $storageProvider
      * @param bool $staging
+     * @throws exceptions\StorageException
      */
-    public function __construct($emailList, $storagePath, $staging = FALSE)
+    public function __construct($emailList, $storageProvider, $staging = FALSE)
     {
         $this->emailList = array_filter(array_unique($emailList));
-        $this->storagePath = rtrim(trim($storagePath), '/\\');
+        if(is_string($storageProvider)) {
+            $storageProvider = new FileSystemStorageProvider($storageProvider); // Convert fs path to provider
+        }
+        $this->storageProvider = rtrim(trim($storageProvider), '/\\');
         $this->staging = boolval($staging);
 
         sort($this->emailList);
@@ -93,7 +99,7 @@ class Runtime
 
         $this->endpoint = new EndpointService();
         $this->nonce = new NonceService();
-        $this->account = new AccountService($this->storagePath.'/account');
+        $this->account = new AccountService($this->storageProvider);
 
         $this->account->init();
     }
@@ -113,7 +119,7 @@ class Runtime
     {
         if (!$this->order)
         {
-            $this->order = new OrderService($domainInfo, $algorithm, $renew);
+            $this->order = new OrderService($this->storageProvider, $domainInfo, $algorithm, $renew);
         }
 
         return $this->order;

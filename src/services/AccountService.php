@@ -15,6 +15,7 @@ use stonemax\acme2\exceptions\AccountException;
 use stonemax\acme2\helpers\CommonHelper;
 use stonemax\acme2\helpers\OpenSSLHelper;
 use stonemax\acme2\helpers\RequestHelper;
+use stonemax\acme2\storage\StorageProvider;
 
 /**
  * Class AccountService
@@ -22,6 +23,10 @@ use stonemax\acme2\helpers\RequestHelper;
  */
 class AccountService
 {
+
+    const PRIVATE_KEY_PATH = DIRECTORY_SEPARATOR. "private.pem";
+    const PUBLIC_KEY_PATH = DIRECTORY_SEPARATOR. "public.pem";
+
     /**
      * Account id
      * @var string
@@ -71,34 +76,17 @@ class AccountService
     public $accountUrl;
 
     /**
-     * Private key storate path
-     * @var string
+     * @var StorageProvider
      */
-    private $_privateKeyPath;
-
-    /**
-     * Public key storage path
-     * @var string
-     */
-    private $_publicKeyPath;
+    private $storageProvider;
 
     /**
      * AccountService constructor.
-     * @param $accountStoragePath
-     * @throws AccountException
+     * @param StorageProvider $storageProvider
      */
-    public function __construct($accountStoragePath)
+    public function __construct($storageProvider)
     {
-        if (
-               !is_dir($accountStoragePath)
-            && mkdir($accountStoragePath, 0755, TRUE) === FALSE
-        )
-        {
-            throw new AccountException("create directory({$accountStoragePath}) failed, please check the permission.");
-        }
-
-        $this->_privateKeyPath = $accountStoragePath.'/private.pem';
-        $this->_publicKeyPath = $accountStoragePath.'/public.pem';
+        $this->storageProvider = $storageProvider;
     }
 
     /**
@@ -110,15 +98,16 @@ class AccountService
      */
     public function init()
     {
-        if (is_file($this->_publicKeyPath) && is_file($this->_privateKeyPath))
+        if ($this->storageProvider->getAccountDataFileExists(AccountService::PUBLIC_KEY_PATH)
+            && $this->storageProvider->getAccountDataFileExists(AccountService::PRIVATE_KEY_PATH))
         {
             $this->getAccount();
 
             return;
         }
 
-        @unlink($this->_privateKeyPath);
-        @unlink($this->_publicKeyPath);
+        $this->storageProvider->deleteAccountDataFile(AccountService::PRIVATE_KEY_PATH);
+        $this->storageProvider->deleteAccountDataFile(AccountService::PUBLIC_KEY_PATH);
 
         $this->createAccount();
     }
@@ -345,8 +334,8 @@ class AccountService
 
         $this->populate($body);
 
-        @unlink($this->_privateKeyPath);
-        @unlink($this->_publicKeyPath);
+        $this->storageProvider->deleteAccountDataFile(AccountService::PRIVATE_KEY_PATH);
+        $this->storageProvider->deleteAccountDataFile(AccountService::PUBLIC_KEY_PATH);
 
         return array_merge($body, ['accountUrl' => $this->getAccountUrl()]);
     }
@@ -357,7 +346,7 @@ class AccountService
      */
     public function getPrivateKey()
     {
-        return file_get_contents($this->_privateKeyPath);
+        return $this->storageProvider->getAccountDataFile(AccountService::PRIVATE_KEY_PATH);
     }
 
     /**
@@ -370,12 +359,12 @@ class AccountService
     {
         $keyPair = $keyPair ?: OpenSSLHelper::generateRSAKeyPair();
 
-        $result = file_put_contents($this->_privateKeyPath, $keyPair['privateKey'])
-            && file_put_contents($this->_publicKeyPath, $keyPair['publicKey']);
+        $result = $this->storageProvider->saveAccountDataFile(AccountService::PRIVATE_KEY_PATH, $keyPair["privateKey"])
+            && $this->storageProvider->saveAccountDataFile(AccountService::PUBLIC_KEY_PATH, $keyPair["publicKey"]);
 
         if ($result === FALSE)
         {
-            throw new AccountException("Create account key pair files failed, the private key path is: {$this->_privateKeyPath}, the public key path is: {$this->_publicKeyPath}");
+            throw new AccountException("Create account key pair files failed, the private key path is: {".AccountService::PRIVATE_KEY_PATH."}, the public key path is: {".AccountService::PUBLIC_KEY_PATH."}");
         }
     }
 

@@ -84,7 +84,7 @@ class NonceService
 
         list($code, $header, ) = RequestHelper::head($newNonceUrl);
 
-        if ($code != 204)
+        if ($code != 200)
         {
             throw new NonceException("Get new nonce failed, the url is: {$newNonceUrl}");
         }

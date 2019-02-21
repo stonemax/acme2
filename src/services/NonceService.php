@@ -84,11 +84,6 @@ class NonceService
 
         list($code, $header, ) = RequestHelper::head($newNonceUrl);
 
-        if ($code != 204)
-        {
-            throw new NonceException("Get new nonce failed, the url is: {$newNonceUrl}");
-        }
-
         $nonce = CommonHelper::getNonceFromResponseHeader($header);
 
         if (!$nonce)

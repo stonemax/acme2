@@ -3,7 +3,7 @@ stonemax/acme2 是一个简单的 PHP 工具，用于生成符合 ACME(Version 2
 
 
 ## 1. 当前版本
-stonemax/acme2 当前的版本是 `1.0.0`。
+stonemax/acme2 当前的版本是 `1.0.4`。
 
 
 ## 2. 先决条件
@@ -23,7 +23,7 @@ composer install
 
 
 ## 4. 使用
-在这里，我们将介绍 stonemax/acme2 中对外暴露的方法，通过认识这些方法，您就大致知道如何使用了，我们也提供了一份案例代码，位于 [examples/](https://github.com/stonemax/acme2/tree/develop/examples) 目录下。
+在这里，我们将介绍 stonemax/acme2 中对外暴露的方法，通过认识这些方法，您就大致知道如何使用了，我们也提供了一份案例代码，位于 [examples/](https://github.com/stonemax/acme2/tree/master/examples) 目录下。
 
 #### 4.1. 初始化客户端
 
@@ -31,7 +31,6 @@ composer install
 $emailList = ['alert@example.com'];                          // 邮箱列表，在适当时机，Let's Encrypt 会发送邮件到此邮箱，例如：证书即将过期
 $storagePath = './data';                                     // 账户数据以及生成的证书存储的目录
 $staging = TRUE;                                             // 是否使用 staging 环境
-
 
 $client = new Client($emailList, $storagePath, $staging);    // 初始化客户端
 ```
@@ -66,12 +65,20 @@ $domainInfo = [
 
 $algorithm = CommonConstant::KEY_PAIR_TYPE_RSA;                 // 生成 RSA 类型的证书，使用 `CommonConstant::KEY_PAIR_TYPE_EC` 生成 ECDSA 证书
 
-$order = $client->getOrder($domainInfo, $algorithm);            // 获取订单实例
+$order = $client->getOrder($domainInfo, $algorithm, TRUE);      // 获取订单实例
 
 $order->getPendingChallengeList();                              // 获取 ChallengeService 实例列表，该列表中存储了域名验证的相关信息
 $order->getCertificateFile();                                   // 获取证书的相关信息，包含：证书位置、生成证书的密钥对文件位置、证书有效期
 $order->revokeCertificate($reason);                             // 吊销证书，证书吊销后就不能再使用了，需要重新生成
 ```
+
+`getOrder()` 方法的原型为：
+
+```php
+public function getOrder(array $domainInfo,int $algorithm, bool $generateNewOder = TRUE): OrderService
+```
+
+其中第三个参数 `$generateNewOder` 控制是否创建新订单。当 `$generateNewOder == TRUE`，原证书目录下的所有文件均会被删除已用于生成新证书；当 `$generateNewOder == FALSE` 时，会返回一个已经存在的订单服务实例，一般用于撤销证书。
 
 #### 4.4. 证书验证相关方法
 
@@ -86,10 +93,10 @@ foreach ($challengeList as $challenge)
 }
 ```
 
-`verify` 方法的原型为：
+`verify()` 方法的原型为：
 
 ```php
-public function verify(int $verifyLocallyTimeout = 0, int $verifyCATimeout = 0) bool
+public function verify(int $verifyLocallyTimeout = 0, int $verifyCATimeout = 0): bool
 ```
 
 * 第一个参数 `$verifyLocallyTimeout` 为本地验证的超时时间。默认值 0 表明不会触发超时机制；
@@ -154,13 +161,17 @@ ACME2支持通配符证书的生成，但仅能使用 DNS 认证。拿 `*.www.ex
 | \*.www.example.com | \_acme-challenge.www.example.com | TXT  |  60 | eZ9ViY12gKfdruYHOO7Lu74ICXeQRMDLp5GuHLvPsf7 |
 
 
-## 6. 完整例子
-stonemax/acme2 随代码附上了一个完整的例子，位于 [examples/](https://github.com/stonemax/acme2/tree/develop/examples) 目录下，也可以点击 [examples/example.php](https://github.com/stonemax/acme2/blob/develop/examples/example.php) 直接查看。
+## 6. 状态机
+[各对象状态机](https://github.com/stonemax/acme2/blob/master/docs/state-machine-zh.md)
 
 
-## 7. 感谢
+## 7. 完整例子
+stonemax/acme2 随代码附上了一个完整的例子，位于 [examples/](https://github.com/stonemax/acme2/tree/master/examples) 目录下，也可以点击 [examples/example.php](https://github.com/stonemax/acme2/blob/master/examples/example.php) 直接查看。
+
+
+## 8. 感谢
 [yourivw/LEClient](https://github.com/yourivw/LEClient) 项目对本项目有很大帮助，在此表示感谢！
 
 
-## 8. 许可证
-此项目使用的是 MIT 许可证，[查看许可证信息](https://github.com/stonemax/acme2/blob/develop/LICENSE)。
+## 9. 许可证
+此项目使用的是 MIT 许可证，[查看许可证信息](https://github.com/stonemax/acme2/blob/master/LICENSE)。

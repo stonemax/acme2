@@ -24,10 +24,10 @@ $domainInfo = [
     ],
 ];
 
-$client = new Client(['alert@example.com'], '../data/', TRUE);
+$client = new Client(['alert@example.com'], '../data/', FALSE);
 
-$order = $client->getOrder($domainInfo, CommonConstant::KEY_PAIR_TYPE_RSA);
-// $order = $client->getOrder($domainInfo, CommonConstant::KEY_PAIR_TYPE_EC);    // Issue an ECC certificate
+$order = $client->getOrder($domainInfo, CommonConstant::KEY_PAIR_TYPE_RSA, TRUE);
+// $order = $client->getOrder($domainInfo, CommonConstant::KEY_PAIR_TYPE_EC, TRUE);    // Issue an ECC certificate
 
 $challengeList = $order->getPendingChallengeList();
 

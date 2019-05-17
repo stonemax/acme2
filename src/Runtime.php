@@ -102,17 +102,18 @@ class Runtime
      * Get order service instance
      * @param array $domainInfo
      * @param string $algorithm
+     * @param bool $generateNewOder
      * @return OrderService
      * @throws exceptions\AccountException
      * @throws exceptions\NonceException
      * @throws exceptions\OrderException
      * @throws exceptions\RequestException
      */
-    public function getOrder($domainInfo, $algorithm)
+    public function getOrder($domainInfo, $algorithm, $generateNewOder)
     {
         if (!$this->order)
         {
-            $this->order = new OrderService($domainInfo, $algorithm);
+            $this->order = new OrderService($domainInfo, $algorithm, $generateNewOder);
         }
 
         return $this->order;

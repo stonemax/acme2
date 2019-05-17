@@ -4,7 +4,7 @@ stonemax/acme2 is a simple PHP tool to manage TLS certificates with ACME-complia
 
 
 ## 1. Current Version
-The current version is `1.0.0`.
+The current version is `1.0.4`.
 
 
 ## 2. Prerequisites
@@ -24,7 +24,7 @@ composer install
 
 
 ## 4. Usage
-The basic methods and its necessary arguments are shown here. An example is supplied in [examples/](https://github.com/stonemax/acme2/tree/develop/examples).
+The basic methods and its necessary arguments are shown here. An example is supplied in [examples/](https://github.com/stonemax/acme2/tree/master/examples).
 
 #### 4.1. Client
 
@@ -32,7 +32,6 @@ The basic methods and its necessary arguments are shown here. An example is supp
 $emailList = ['alert@example.com'];                          // Email list as contact info
 $storagePath = './data';                                     // Account data and certificates files will be stored here
 $staging = TRUE;                                             // Using stage environment or not, make sure to empty $storagePath directory after you change from staging/test server to the real one
-
 
 $client = new Client($emailList, $storagePath, $staging);    // Initiating a client
 ```
@@ -68,12 +67,20 @@ $domainInfo = [
 
 $algorithm = CommonConstant::KEY_PAIR_TYPE_RSA;                 // Generate RSA certificates, `CommonConstant::KEY_PAIR_TYPE_EC` for ECDSA certificates
 
-$order = $client->getOrder($domainInfo, $algorithm);            // Get an order service instance
+$order = $client->getOrder($domainInfo, $algorithm, TRUE);      // Get an order service instance
 
 $order->getPendingChallengeList();                              // Get all authorization challenges for domains
 $order->getCertificateFile();                                   // Get certificates, such as certificates path, private/public key pair path, valid time
 $order->revokeCertificate($reason);                             // Revoke certificates, the certificaes ara unavailable after revoked
 ```
+
+The prototype of method `getOrder()` is shown as bellow:
+
+```php
+public function getOrder(array $domainInfo,int $algorithm, bool $generateNewOder = TRUE): OrderService
+```
+
+The third param `$generateNewOder` controls whether a new order need to be generated. When `$generateNewOder == TRUE`, all files under original certificates directory will be removed in order to generate new certificates; When `$generateNewOder == FALSE`, it will return an existing order service instance used to revoke certificates generally.
 
 #### 4.4. Challenge
 
@@ -88,10 +95,10 @@ foreach ($challengeList as $challenge)
 }
 ```
 
-The prototype of method `verify` is shown as bellow:
+The prototype of method `verify()` is shown as bellow:
 
 ```php
-public function verify(int $verifyLocallyTimeout = 0, int $verifyCATimeout = 0) bool
+public function verify(int $verifyLocallyTimeout = 0, int $verifyCATimeout = 0): bool
 ```
 
 * The first param `$verifyLocallyTimeout` stands for the timeout of local verification. Default value 0 won't trigger time-out mechanism;
@@ -161,13 +168,17 @@ Here is a simple summary for dns-01 challenges about domain and DNS record.
 | \*.www.example.com | \_acme-challenge.www.example.com | TXT  |  60 | eZ9ViY12gKfdruYHOO7Lu74ICXeQRMDLp5GuHLvPsf7 |
 
 
-## 6. Full example
-Project supplies a [full example](https://github.com/stonemax/acme2/blob/develop/examples/example.php) under directory [examples/](https://github.com/stonemax/acme2/tree/develop/examples).
+## 6. State machine
+[Objects's state machine](https://github.com/stonemax/acme2/blob/master/docs/state-machine-zh.md)
 
 
-## 7. Thanks
+## 7. Full example
+Project supplies a [full example](https://github.com/stonemax/acme2/blob/master/examples/example.php) under directory [examples/](https://github.com/stonemax/acme2/tree/master/examples).
+
+
+## 8. Thanks
 This Project had got a lot of inspirations from [yourivw/LEClient](https://github.com/yourivw/LEClient). Thanks!
 
 
-## 8. License
-This project is licensed under the MIT License, see the [LICENSE](https://github.com/stonemax/acme2/blob/develop/LICENSE) file for detail.
+## 9. License
+This project is licensed under the MIT License, see the [LICENSE](https://github.com/stonemax/acme2/blob/master/LICENSE) file for detail.

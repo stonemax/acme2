@@ -17,7 +17,7 @@ return [
     /**
      * Version number
      */
-    'version' => '1.0.3',
+    'version' => '1.0.4',
 
     /**
      * Endpoint production environment url

@@ -76,21 +76,25 @@ class ChallengeService
 
     /**
      * Verify
+     * @param int $verifyLocallyTimeout
+     * @param int $verifyCATimeout
      * @return bool
      * @throws \stonemax\acme2\exceptions\AccountException
      * @throws \stonemax\acme2\exceptions\AuthorizationException
      * @throws \stonemax\acme2\exceptions\NonceException
      * @throws \stonemax\acme2\exceptions\RequestException
+     * @throws \stonemax\acme2\exceptions\timeout\VerifyCATimeoutException
+     * @throws \stonemax\acme2\exceptions\timeout\VerifyLocallyTimeoutException
      */
-    public function verify()
+    public function verify($verifyLocallyTimeout = 0, $verifyCATimeout = 0)
     {
         $orderService = Client::$runtime->order;
 
-        if ($orderService->isOrderFinalized() || $orderService->isAllAuthorizationValid() === TRUE)
+        if ($orderService->isAllAuthorizationValid() === TRUE)
         {
             return TRUE;
         }
 
-        return $this->_authorication->verify($this->_type);
+        return $this->_authorication->verify($this->_type, $verifyLocallyTimeout, $verifyCATimeout);
     }
 }

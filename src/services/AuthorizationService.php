@@ -13,6 +13,8 @@ namespace stonemax\acme2\services;
 use stonemax\acme2\Client;
 use stonemax\acme2\constants\CommonConstant;
 use stonemax\acme2\exceptions\AuthorizationException;
+use stonemax\acme2\exceptions\timeout\VerifyCATimeoutException;
+use stonemax\acme2\exceptions\timeout\VerifyLocallyTimeoutException;
 use stonemax\acme2\helpers\CommonHelper;
 use stonemax\acme2\helpers\OpenSSLHelper;
 use stonemax\acme2\helpers\RequestHelper;
@@ -119,13 +121,17 @@ class AuthorizationService
     /**
      * Make letsencrypt to verify
      * @param string $type
+     * @param int $verifyLocallyTimeout
+     * @param int $verifyCATimeout
      * @return bool
      * @throws AuthorizationException
+     * @throws VerifyCATimeoutException
+     * @throws VerifyLocallyTimeoutException
      * @throws \stonemax\acme2\exceptions\AccountException
      * @throws \stonemax\acme2\exceptions\NonceException
      * @throws \stonemax\acme2\exceptions\RequestException
      */
-    public function verify($type)
+    public function verify($type, $verifyLocallyTimeout, $verifyCATimeout)
     {
         $challenge = $this->getChallenge($type);
 
@@ -136,10 +142,7 @@ class AuthorizationService
 
         $keyAuthorization = $challenge['token'].'.'.OpenSSLHelper::generateThumbprint();
 
-        while (!$this->verifyLocally($type, $keyAuthorization))
-        {
-            sleep(3);
-        }
+        $this->verifyLocally($type, $keyAuthorization, $verifyLocallyTimeout);
 
         $jwk = OpenSSLHelper::generateJWSOfKid(
             $challenge['url'],
@@ -154,51 +157,81 @@ class AuthorizationService
             throw new AuthorizationException("Send Request to letsencrypt to verify authorization failed, the url is: {$challenge['url']}, the domain is: {$this->identifier['value']}, the code is: {$code}, the header is: {$header}, the body is: ".print_r($body, TRUE));
         }
 
-        while ($this->status == 'pending')
-        {
-            sleep(3);
-
-            $this->getAuthorization();
-        }
-
-        if ($this->status == 'invalid')
-        {
-            throw new AuthorizationException("Verify {$this->domain} failed, the authorization status becomes invalid.");
-        }
+        $this->verifyCA($type, $verifyCATimeout);
 
         return TRUE;
     }
 
     /**
-     * Check locally
+     * Verify locally
      * @param string $type
      * @param string $keyAuthorization
-     * @return bool
+     * @param int $verifyLocallyTimeout
+     * @throws VerifyLocallyTimeoutException
+     */
+    private function verifyLocally($type, $keyAuthorization, $verifyLocallyTimeout)
+    {
+        $verifyStartTime = time();
+
+        while (TRUE)
+        {
+            if ($verifyLocallyTimeout > 0 && (time() - $verifyStartTime) > $verifyLocallyTimeout)
+            {
+                throw new VerifyLocallyTimeoutException("Verify `{$this->domain}` via {$type} timeout, the timeout setting is: {$verifyLocallyTimeout} seconds");
+            }
+
+            $challenge = $this->getChallenge($type);
+            $domain = $this->identifier['value'];
+
+            if ($type == CommonConstant::CHALLENGE_TYPE_HTTP)
+            {
+                if (CommonHelper::checkHttpChallenge($domain, $challenge['token'], $keyAuthorization) === TRUE)
+                {
+                    break;
+                }
+            }
+            else
+            {
+                $dnsContent = CommonHelper::base64UrlSafeEncode(hash('sha256', $keyAuthorization, TRUE));
+
+                if (CommonHelper::checkDNSChallenge($domain, $dnsContent) === TRUE)
+                {
+                    break;
+                }
+            }
+
+            sleep(3);
+        }
+    }
+
+    /**
+     * Verify via Let's encrypt
+     * @param string $type
+     * @param int $verifyCATimeout
+     * @throws AuthorizationException
+     * @throws VerifyCATimeoutException
      * @throws \stonemax\acme2\exceptions\RequestException
      */
-    private function verifyLocally($type, $keyAuthorization)
+    private function verifyCA($type, $verifyCATimeout)
     {
-        $challenge = $this->getChallenge($type);
-        $domain = $this->identifier['value'];
+        $verifyStartTime = time();
 
-        if ($type == CommonConstant::CHALLENGE_TYPE_HTTP)
+        while ($this->status == 'pending')
         {
-            if (!CommonHelper::checkHttpChallenge($domain, $challenge['token'], $keyAuthorization))
+            if ($verifyCATimeout > 0 && (time() - $verifyStartTime) > $verifyCATimeout)
             {
-                return FALSE;
+                throw new VerifyCATimeoutException("Verify `{$this->domain}` via {$type} timeout, the timeout setting is: {$verifyCATimeout} seconds");
             }
-        }
-        else
-        {
-            $dnsContent = CommonHelper::base64UrlSafeEncode(hash('sha256', $keyAuthorization, TRUE));
 
-            if (!CommonHelper::checkDNSChallenge($domain, $dnsContent))
-            {
-                return FALSE;
-            }
+            sleep(3);
+
+            $this->getAuthorization();
         }
 
-        return TRUE;
+        if ($this->status != 'valid')
+        {
+            throw new AuthorizationException("Verify {$this->domain} via {$type} failed, the authorization status becomes {$this->status}.");
+        }
     }
 
     /**

@@ -67,9 +67,8 @@ $domainInfo = [
 ];
 
 $algorithm = CommonConstant::KEY_PAIR_TYPE_RSA;                 // Generate RSA certificates, `CommonConstant::KEY_PAIR_TYPE_EC` for ECDSA certificates
-$renew = FALSE;                                                 // Renew certificates
 
-$order = $client->getOrder($domainInfo, $algorithm, $renew);    // Get an order service instance
+$order = $client->getOrder($domainInfo, $algorithm);            // Get an order service instance
 
 $order->getPendingChallengeList();                              // Get all authorization challenges for domains
 $order->getCertificateFile();                                   // Get certificates, such as certificates path, private/public key pair path, valid time
@@ -88,6 +87,15 @@ foreach ($challengeList as $challenge)
     $challenge->verify();           // Do verifying operation, this method will loop infinitely until verification passed
 }
 ```
+
+The prototype of method `verify` is shown as bellow:
+
+```php
+public function verify(int $verifyLocallyTimeout = 0, int $verifyCATimeout = 0) bool
+```
+
+* The first param `$verifyLocallyTimeout` stands for the timeout of local verification. Default value 0 won't trigger time-out mechanism;
+* The second param `$verifyCATimeout` stand for the timeout of Let's Encrypt verification. Default value 0 won't trigger time-out mechanism.
 
 
 ## 5. Domain Verification

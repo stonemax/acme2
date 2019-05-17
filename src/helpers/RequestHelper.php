@@ -78,9 +78,9 @@ class RequestHelper
 
         $response = curl_exec($handler);
 
-        if ($errorString = curl_errno($handler))
+        if ($errorNumber = curl_errno($handler))
         {
-            throw new RequestException("Request to {$url}({$requestType}) failed, the error message is: {$errorString}");
+            throw new RequestException("Request to {$url}({$requestType}) failed, the error number is: {$errorNumber}, the error message is: ".curl_error($handler));
         }
 
         $info = curl_getinfo($handler);
@@ -121,7 +121,8 @@ class RequestHelper
         $handler = curl_init($url);
 
         curl_setopt($handler, CURLOPT_HTTPHEADER, $header);
-        curl_setopt($handler, CURLOPT_CONNECTTIMEOUT, 30);
+        curl_setopt($handler, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+        curl_setopt($handler, CURLOPT_CONNECTTIMEOUT, 5);
         curl_setopt($handler, CURLOPT_SSL_VERIFYPEER, FALSE);
         curl_setopt($handler, CURLOPT_SSL_VERIFYHOST, FALSE);
         curl_setopt($handler, CURLOPT_FOLLOWLOCATION, TRUE);

@@ -90,12 +90,6 @@ class OrderService
     private $_algorithm;
 
     /**
-     * Is a new order
-     * @var bool
-     */
-    private $_renew;
-
-    /**
      * Certificate private key file path
      * @var string
      */
@@ -135,16 +129,14 @@ class OrderService
      * OrderService constructor.
      * @param array $domainInfo
      * @param string $algorithm
-     * @param bool $renew
      * @throws OrderException
      * @throws \stonemax\acme2\exceptions\AccountException
      * @throws \stonemax\acme2\exceptions\NonceException
      * @throws \stonemax\acme2\exceptions\RequestException
      */
-    public function __construct($domainInfo, $algorithm, $renew = FALSE)
+    public function __construct($domainInfo, $algorithm)
     {
         $this->_algorithm = $algorithm;
-        $this->_renew = boolval($renew);
 
         if ($this->_algorithm == CommonConstant::KEY_PAIR_TYPE_EC && version_compare(PHP_VERSION, '7.1.0') == -1)
         {
@@ -207,15 +199,12 @@ class OrderService
             $this->{$propertyName} = $basePath.DIRECTORY_SEPARATOR.$fileName;
         }
 
-        if ($this->_renew)
+        foreach ($pathMap as $propertyName => $fileName)
         {
-            foreach ($pathMap as $propertyName => $fileName)
-            {
-                @unlink($basePath.DIRECTORY_SEPARATOR.$fileName);
-            }
+            @unlink($basePath.DIRECTORY_SEPARATOR.$fileName);
         }
 
-        is_file($this->_orderInfoPath) ? $this->getOrder() : $this->createOrder();
+        $this->createOrder();
 
         file_put_contents(
             Client::$runtime->storagePath.DIRECTORY_SEPARATOR.$flag.DIRECTORY_SEPARATOR.'DOMAIN',
@@ -278,11 +267,12 @@ class OrderService
 
     /**
      * Get an existed order info
+     * @param bool $getAuthorizationList
      * @return array
      * @throws OrderException
      * @throws \stonemax\acme2\exceptions\RequestException
      */
-    private function getOrder()
+    private function getOrder($getAuthorizationList = TRUE)
     {
         $orderUrl = $this->getOrderInfoFromCache()['orderUrl'];
 
@@ -294,7 +284,11 @@ class OrderService
         }
 
         $this->populate(array_merge($body, ['orderUrl' => $orderUrl]));
-        $this->getAuthorizationList();
+
+        if ($getAuthorizationList === TRUE)
+        {
+            $this->getAuthorizationList();
+        }
 
         return array_merge($body, ['orderUrl' => $orderUrl]);
     }
@@ -305,7 +299,7 @@ class OrderService
      */
     public function getPendingChallengeList()
     {
-        if ($this->isOrderFinalized() === TRUE || $this->isAllAuthorizationValid() === TRUE)
+        if ($this->isAllAuthorizationValid() === TRUE)
         {
             return [];
         }
@@ -374,22 +368,9 @@ class OrderService
             throw new OrderException("There are still some authorizations that are not valid.");
         }
 
-        if ($this->status == 'pending')
-        {
-            if (!$csr)
-            {
-                $csr = $this->getCSR();
-            }
-
-            $this->finalizeOrder(CommonHelper::getCSRWithoutComment($csr));
-        }
-
-        while ($this->status != 'valid')
-        {
-            sleep(3);
-
-            $this->getOrder();
-        }
+        $this->waitStatus('ready');
+        $this->finalizeOrder(CommonHelper::getCSRWithoutComment($csr ?: $this->getCSR()));
+        $this->waitStatus('valid');
 
         list($code, $header, $body) = RequestHelper::get($this->certificate);
 
@@ -628,6 +609,22 @@ class OrderService
         $orderInfo = array_merge($this->getOrderInfoFromCache(), $orderInfo);
 
         return file_put_contents($this->_orderInfoPath, json_encode($orderInfo));
+    }
+
+    /**
+     * 等待订单状态
+     * @param $staus
+     * @throws OrderException
+     * @throws \stonemax\acme2\exceptions\RequestException
+     */
+    private function waitStatus($staus)
+    {
+        while ($this->status != $staus)
+        {
+            sleep(3);
+
+            $this->getOrder(FALSE);
+        }
     }
 
     /**

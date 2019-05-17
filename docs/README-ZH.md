@@ -65,9 +65,8 @@ $domainInfo = [
 ];
 
 $algorithm = CommonConstant::KEY_PAIR_TYPE_RSA;                 // 生成 RSA 类型的证书，使用 `CommonConstant::KEY_PAIR_TYPE_EC` 生成 ECDSA 证书
-$renew = FALSE;                                                 // 是否重新生成证书，一般用于证书快过期时，用于证书续期（实际上是重新生成了证书）
 
-$order = $client->getOrder($domainInfo, $algorithm, $renew);    // 获取订单实例
+$order = $client->getOrder($domainInfo, $algorithm);            // 获取订单实例
 
 $order->getPendingChallengeList();                              // 获取 ChallengeService 实例列表，该列表中存储了域名验证的相关信息
 $order->getCertificateFile();                                   // 获取证书的相关信息，包含：证书位置、生成证书的密钥对文件位置、证书有效期
@@ -86,6 +85,15 @@ foreach ($challengeList as $challenge)
     $challenge->verify();           // 验证域名，这是一个无限循环，直到证书验证成功才返回
 }
 ```
+
+`verify` 方法的原型为：
+
+```php
+public function verify(int $verifyLocallyTimeout = 0, int $verifyCATimeout = 0) bool
+```
+
+* 第一个参数 `$verifyLocallyTimeout` 为本地验证的超时时间。默认值 0 表明不会触发超时机制；
+* 第二个参数 `$verifyCATimeout` 为 Let's Encrypt 的验证超时时间。默认值 0 表明不会触发超时机制。
 
 
 ## 5. 域名验证

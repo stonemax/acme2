@@ -90,6 +90,12 @@ class OrderService
     private $_algorithm;
 
     /**
+     * Whether to generate a new order or not. When `true` the existing files will be removed.
+     * @var bool
+     */
+    private $_generateNewOrder;
+
+    /**
      * Certificate private key file path
      * @var string
      */
@@ -127,16 +133,19 @@ class OrderService
 
     /**
      * OrderService constructor.
+     * OrderService constructor.
      * @param array $domainInfo
-     * @param string $algorithm
+     * @param int $algorithm
+     * @param bool $generateNewOder
      * @throws OrderException
      * @throws \stonemax\acme2\exceptions\AccountException
      * @throws \stonemax\acme2\exceptions\NonceException
      * @throws \stonemax\acme2\exceptions\RequestException
      */
-    public function __construct($domainInfo, $algorithm)
+    public function __construct($domainInfo, $algorithm, $generateNewOder)
     {
         $this->_algorithm = $algorithm;
+        $this->_generateNewOrder = boolval($generateNewOder);
 
         if ($this->_algorithm == CommonConstant::KEY_PAIR_TYPE_EC && version_compare(PHP_VERSION, '7.1.0') == -1)
         {
@@ -199,12 +208,17 @@ class OrderService
             $this->{$propertyName} = $basePath.DIRECTORY_SEPARATOR.$fileName;
         }
 
-        foreach ($pathMap as $propertyName => $fileName)
+        if ($this->_generateNewOrder === TRUE)
         {
-            @unlink($basePath.DIRECTORY_SEPARATOR.$fileName);
+            foreach ($pathMap as $propertyName => $fileName)
+            {
+                @unlink($basePath.DIRECTORY_SEPARATOR.$fileName);
+            }
         }
 
-        $this->createOrder();
+        ($this->_generateNewOrder === TRUE)
+            ? $this->createOrder()
+            : $this->getOrder();
 
         file_put_contents(
             Client::$runtime->storagePath.DIRECTORY_SEPARATOR.$flag.DIRECTORY_SEPARATOR.'DOMAIN',
@@ -274,6 +288,11 @@ class OrderService
      */
     private function getOrder($getAuthorizationList = TRUE)
     {
+        if (!is_file($this->_orderInfoPath))
+        {
+            throw new OrderException("Get order info failed, the local order info file doesn't exist, the order info file path is: {$this->_orderInfoPath}");
+        }
+
         $orderUrl = $this->getOrderInfoFromCache()['orderUrl'];
 
         list($code, $header, $body) = RequestHelper::get($orderUrl);

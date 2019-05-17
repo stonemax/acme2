@@ -169,7 +169,7 @@ Here is a simple summary for dns-01 challenges about domain and DNS record.
 
 
 ## 6. State machine
-[Objects's state machine](https://github.com/stonemax/acme2/blob/master/docs/state-machine-zh.md)
+[Objects's state machines](https://github.com/stonemax/acme2/blob/master/docs/state-machine.md)
 
 
 ## 7. Full example

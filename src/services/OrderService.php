@@ -210,10 +210,7 @@ class OrderService
 
         if ($this->_generateNewOrder === TRUE)
         {
-            foreach ($pathMap as $propertyName => $fileName)
-            {
-                @unlink($basePath.DIRECTORY_SEPARATOR.$fileName);
-            }
+            $this->removeLocalData();
         }
 
         ($this->_generateNewOrder === TRUE)
@@ -462,6 +459,8 @@ class OrderService
             throw new OrderException("Revoke certificate failed, the domain list is: ".implode(', ', $this->_domainList).", the code is: {$code}, the header is: {$header}, the body is: ".print_r($body, TRUE));
         }
 
+        $this->removeLocalData();
+
         return TRUE;
     }
 
@@ -655,6 +654,26 @@ class OrderService
         foreach ($orderInfo as $key => $value)
         {
             $this->{$key} = $value;
+        }
+    }
+
+    /**
+     * Remove local copy of certificate data
+     * @return boolean
+     */
+    private function removeLocalData()
+    {
+        $filesToUnlink = [
+            $this->_privateKeyPath,
+            $this->_publicKeyPath,
+            $this->_csrPath,
+            $this->_certificatePath,
+            $this->_certificateFullChainedPath,
+            $this->_orderInfoPath,
+        ];
+        foreach ($filesToUnlink as $file)
+        {
+            @unlink($file);
         }
     }
 }

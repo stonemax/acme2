@@ -52,15 +52,15 @@ class Client
      * Get order service instance
      * @param array $domainInfo
      * @param string $algorithm
-     * @param bool $renew
+     * @param bool $generateNewOder
      * @return services\OrderService
      * @throws exceptions\AccountException
      * @throws exceptions\NonceException
      * @throws exceptions\OrderException
      * @throws exceptions\RequestException
      */
-    public function getOrder($domainInfo, $algorithm, $renew = FALSE)
+    public function getOrder($domainInfo, $algorithm, $generateNewOder = TRUE)
     {
-        return self::$runtime->getOrder($domainInfo, $algorithm, $renew);
+        return self::$runtime->getOrder($domainInfo, $algorithm, $generateNewOder);
     }
 }

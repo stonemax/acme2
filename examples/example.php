@@ -24,14 +24,14 @@ $domainInfo = [
     ],
 ];
 
-$client = new Client(['alert@example.com'], '../data/', TRUE);
+$client = new Client(['alert@example.com'], '../data/', FALSE);
 
-$order = $client->getOrder($domainInfo, CommonConstant::KEY_PAIR_TYPE_RSA);
-// $order = $client->getOrder($domainInfo, CommonConstant::KEY_PAIR_TYPE_RSA, TRUE);    // Renew certificates
+$order = $client->getOrder($domainInfo, CommonConstant::KEY_PAIR_TYPE_RSA, TRUE);
+// $order = $client->getOrder($domainInfo, CommonConstant::KEY_PAIR_TYPE_EC, TRUE);    // Issue an ECC certificate
 
 $challengeList = $order->getPendingChallengeList();
 
-/* Verify authorizations */
+/* Get challenges info and set credentials */
 foreach ($challengeList as $challenge)
 {
     $challengeType = $challenge->getType();    // http-01 or dns-01
@@ -60,9 +60,22 @@ foreach ($challengeList as $challenge)
             $credential['dnsContent']
         );
     }
+}
 
-    /* Infinite loop until the authorization status becomes valid */
+/* Verify challenges */
+foreach ($challengeList as $challenge)
+{
+    /* Infinite loop until the challenge status becomes valid */
     $challenge->verify();
+
+    /* Or you can specify local verification timeout in seconds */
+    // $challenge->verify(60);
+
+    /* Or you can specify Let's Encrypt verification timeout in seconds */
+    // $challenge->verify(0, 60);
+
+    /* Or you can specify both timeouts at once */
+    // $challenge->verify(60, 60);
 }
 
 $certificateInfo = $order->getCertificateFile();
